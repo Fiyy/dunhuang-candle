@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const BASE_RADIUS = 130; // candle light radius in px
 
-  // Candle graphic dimensions
-  const CANDLE_H = 80;      // total height of candle graphic below the light center
-  const FLAME_OFFSET = 10;  // flame sits slightly above the light center
+  // The candle graphic sits BELOW the light circle.
+  // candleX/Y = center of the light halo (= where the flame is)
+  // The candle body starts at the BOTTOM EDGE of the halo and extends downward.
 
   // ---------------------------------------------------------------------------
   // Canvas setup
@@ -184,71 +184,103 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------------------------------------------------------------------------
-  // Draw candle graphic — cx/cy is the flame/light center point
+  // Draw candle graphic
+  // cx/cy = center of the light halo (flame position).
+  // The physical candle body is drawn BELOW the halo's bottom edge,
+  // so it sits just outside the lit circle — visible in the dark.
   // ---------------------------------------------------------------------------
   function drawCandle(ctx, cx, cy, flicker) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    const bodyW  = 14;   // candle body half-width
-    const bodyH  = 48;   // candle body height
-    const baseW  = 22;   // base plate half-width
-    const baseH  = 6;    // base plate height
-    const stemH  = 10;   // stem between base and body
-    const top    = cy + FLAME_OFFSET; // top of candle body = just below flame
+    const flickerR = BASE_RADIUS + flicker * BASE_RADIUS * 0.08;
+
+    // Candle body starts at the bottom edge of the light circle
+    const candleTopY  = cy + flickerR * 0.85; // slightly inside bottom edge for overlap
+    const bodyW  = 12;
+    const bodyH  = 52;
+    const stemH  = 8;
+    const baseW  = 20;
+    const baseH  = 5;
 
     // ── Candle body ───────────────────────────────────────────────
     const bodyGrad = ctx.createLinearGradient(cx - bodyW, 0, cx + bodyW, 0);
-    bodyGrad.addColorStop(0,   'rgba(220,200,160,0.55)');
-    bodyGrad.addColorStop(0.4, 'rgba(255,240,200,0.75)');
-    bodyGrad.addColorStop(1,   'rgba(180,160,120,0.55)');
+    bodyGrad.addColorStop(0,   'rgba(200,175,130,0.7)');
+    bodyGrad.addColorStop(0.4, 'rgba(245,225,180,0.85)');
+    bodyGrad.addColorStop(1,   'rgba(170,145,100,0.7)');
     ctx.fillStyle = bodyGrad;
     ctx.beginPath();
-    ctx.roundRect(cx - bodyW, top, bodyW * 2, bodyH, 3);
+    ctx.roundRect(cx - bodyW, candleTopY, bodyW * 2, bodyH, 3);
     ctx.fill();
+
+    // ── Drip texture lines ────────────────────────────────────────
+    ctx.strokeStyle = 'rgba(220,200,155,0.4)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 3; i++) {
+      ctx.beginPath();
+      ctx.moveTo(cx - bodyW + 3, candleTopY + i * 12);
+      ctx.lineTo(cx - bodyW + 3 + 6, candleTopY + i * 12 + 5);
+      ctx.stroke();
+    }
 
     // ── Stem ──────────────────────────────────────────────────────
-    ctx.fillStyle = 'rgba(200,180,130,0.6)';
-    ctx.fillRect(cx - 4, top + bodyH, 8, stemH);
+    ctx.fillStyle = 'rgba(180,155,100,0.7)';
+    ctx.fillRect(cx - 4, candleTopY + bodyH, 8, stemH);
 
-    // ── Base plate ────────────────────────────────────────────────
+    // ── Base plate (ellipse) ──────────────────────────────────────
     const baseGrad = ctx.createLinearGradient(cx - baseW, 0, cx + baseW, 0);
-    baseGrad.addColorStop(0,   'rgba(180,150,90,0.6)');
-    baseGrad.addColorStop(0.5, 'rgba(220,190,120,0.8)');
-    baseGrad.addColorStop(1,   'rgba(160,130,80,0.6)');
+    baseGrad.addColorStop(0,   'rgba(160,130,75,0.8)');
+    baseGrad.addColorStop(0.5, 'rgba(210,180,110,0.95)');
+    baseGrad.addColorStop(1,   'rgba(145,115,65,0.8)');
     ctx.fillStyle = baseGrad;
     ctx.beginPath();
-    ctx.ellipse(cx, top + bodyH + stemH + baseH * 0.5, baseW, baseH * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, candleTopY + bodyH + stemH + baseH * 0.4,
+                baseW, baseH * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // ── Flame ─────────────────────────────────────────────────────
-    const fFlicker = flicker * 2; // flame sways with flicker
-    const fx = cx + fFlicker;
-    const fy = cy - FLAME_OFFSET;
-
-    // Outer flame (orange)
+    // ── Wick (short line from candle top up to flame) ─────────────
+    const wickSway = flicker * 2;
+    ctx.strokeStyle = 'rgba(60, 35, 10, 0.85)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(fx, fy - 14);
-    ctx.bezierCurveTo(fx + 7, fy - 6, fx + 5, fy + 4, fx, fy + 6);
-    ctx.bezierCurveTo(fx - 5, fy + 4, fx - 7, fy - 6, fx, fy - 14);
-    ctx.fillStyle = 'rgba(255, 140, 20, 0.9)';
+    ctx.moveTo(cx, candleTopY);          // top of candle body
+    ctx.lineTo(cx + wickSway, cy + 6);   // bottom of flame
+    ctx.stroke();
+
+    // ── Flame (drawn AT the halo center, top of wick) ─────────────
+    const fx = cx + wickSway;
+    const fy = cy;
+
+    // Outer glow halo around flame
+    const flameGlow = ctx.createRadialGradient(fx, fy, 0, fx, fy, 22);
+    flameGlow.addColorStop(0,   'rgba(255,200,60,0.35)');
+    flameGlow.addColorStop(1,   'rgba(255,140,20,0)');
+    ctx.fillStyle = flameGlow;
+    ctx.beginPath();
+    ctx.arc(fx, fy, 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outer flame shape (orange teardrop)
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - 16);
+    ctx.bezierCurveTo(fx + 8,  fy - 6, fx + 6,  fy + 5, fx, fy + 7);
+    ctx.bezierCurveTo(fx - 6,  fy + 5, fx - 8,  fy - 6, fx, fy - 16);
+    ctx.fillStyle = 'rgba(255, 130, 15, 0.92)';
     ctx.fill();
 
     // Inner flame (bright yellow core)
     ctx.beginPath();
-    ctx.moveTo(fx, fy - 9);
-    ctx.bezierCurveTo(fx + 3, fy - 3, fx + 2, fy + 2, fx, fy + 4);
-    ctx.bezierCurveTo(fx - 2, fy + 2, fx - 3, fy - 3, fx, fy - 9);
-    ctx.fillStyle = 'rgba(255, 240, 120, 0.95)';
+    ctx.moveTo(fx, fy - 10);
+    ctx.bezierCurveTo(fx + 4, fy - 3, fx + 3, fy + 3, fx, fy + 5);
+    ctx.bezierCurveTo(fx - 3, fy + 3, fx - 4, fy - 3, fx, fy - 10);
+    ctx.fillStyle = 'rgba(255, 245, 130, 0.98)';
     ctx.fill();
 
-    // Wick
-    ctx.strokeStyle = 'rgba(80, 50, 20, 0.8)';
-    ctx.lineWidth = 1.5;
+    // White hot center
     ctx.beginPath();
-    ctx.moveTo(cx, top);
-    ctx.lineTo(fx, fy + 4);
-    ctx.stroke();
+    ctx.arc(fx, fy - 2, 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 220, 0.9)';
+    ctx.fill();
 
     ctx.restore();
   }
