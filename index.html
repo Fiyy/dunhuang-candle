@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Dunhuang Cave Murals — Candle Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loading-content">
+      <h1>Dunhuang Caves</h1>
+      <p class="loading-hint">Loading hand detection model...</p>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Layer 1: Mural Background -->
+  <div id="mural-container">
+    <img id="mural-img" src="https://upload.wikimedia.org/wikipedia/commons/c/ca/Buddha_and_Bodhisattvas_Dunhuang_Mogao_Caves.png" alt="Dunhuang Mural" crossorigin="anonymous">
+  </div>
+
+  <!-- Layer 2: Dark Overlay Canvas -->
+  <canvas id="overlay-canvas"></canvas>
+
+  <!-- Layer 3: UI Controls -->
+  <div id="ui-controls">
+    <!-- Top bar: title -->
+    <div id="top-bar">
+      <span id="mural-title">Buddha and Bodhisattvas</span>
+    </div>
+
+    <!-- Mode indicator -->
+    <div id="mode-badge" class="hidden">
+      <span id="mode-text">Touch Mode</span>
+    </div>
+
+    <!-- Bottom controls -->
+    <div id="bottom-bar">
+      <!-- Mural dots -->
+      <div id="mural-dots">
+        <button class="dot active" data-index="0" aria-label="Mural 1"></button>
+        <button class="dot" data-index="1" aria-label="Mural 2"></button>
+        <button class="dot" data-index="2" aria-label="Mural 3"></button>
+      </div>
+      <!-- Light toggle -->
+      <button id="light-btn" aria-label="Toggle lights">
+        <span class="icon">&#x1F56F;</span>
+        <span class="label">Light On</span>
+      </button>
+    </div>
+
+    <!-- Ambient hint (hidden after first gesture) -->
+    <div id="hint">
+      <p>Make a fist to light the candle</p>
+    </div>
+  </div>
+
+  <!-- Hidden: camera video -->
+  <video id="camera-video" playsinline autoplay muted></video>
+
+  <!-- MediaPipe CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="app.js"></script>
+</body>
+</html>

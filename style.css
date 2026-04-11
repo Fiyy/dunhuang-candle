@@ -1,0 +1,367 @@
+/* Fonts loaded via <link> in HTML */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #1a1208;
+  color: #c9a84c;
+  font-family: 'Cormorant Garamond', serif;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ─── Loading Screen ─────────────────────────────────────────── */
+
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #1a1208;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+#loading-screen.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px;
+  text-align: center;
+}
+
+.loading-content h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.4rem, 5vw, 2.4rem);
+  font-weight: 600;
+  color: #c9a84c;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 30px rgba(201, 168, 76, 0.5), 0 0 60px rgba(201, 168, 76, 0.2);
+  line-height: 1.3;
+}
+
+.loading-hint {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(0.85rem, 2.5vw, 1.05rem);
+  font-style: italic;
+  color: rgba(201, 168, 76, 0.6);
+  letter-spacing: 0.06em;
+}
+
+.loading-bar {
+  width: clamp(180px, 50vw, 320px);
+  height: 3px;
+  background: rgba(201, 168, 76, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #7a5c1e, #c9a84c, #f0d080, #c9a84c, #7a5c1e);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ─── Mural Image ────────────────────────────────────────────── */
+
+#mural-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+#mural-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: opacity 0.4s ease;
+}
+
+#mural-img.fade {
+  opacity: 0;
+}
+
+/* ─── Overlay Canvas ─────────────────────────────────────────── */
+
+#overlay-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ─── UI Controls ────────────────────────────────────────────── */
+
+#ui-controls {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+#ui-controls button,
+#ui-controls .dot {
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Top Bar ────────────────────────────────────────────────── */
+
+#top-bar {
+  width: 100%;
+  padding: 16px 20px 20px;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 7, 2, 0.85) 0%,
+    rgba(10, 7, 2, 0.5) 70%,
+    transparent 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#mural-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(0.9rem, 3.5vw, 1.3rem);
+  font-weight: 600;
+  color: #c9a84c;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(201, 168, 76, 0.3);
+  transition: opacity 0.4s ease;
+}
+
+/* ─── Mode Badge ─────────────────────────────────────────────── */
+
+#mode-badge {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 21;
+  padding: 5px 16px;
+  border: 1px solid rgba(201, 168, 76, 0.6);
+  border-radius: 20px;
+  background: rgba(10, 7, 2, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#mode-badge.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-6px);
+  pointer-events: none;
+}
+
+#mode-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: rgba(201, 168, 76, 0.85);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* ─── Bottom Bar ─────────────────────────────────────────────── */
+
+#bottom-bar {
+  width: 100%;
+  padding: 20px 24px 28px;
+  background: linear-gradient(
+    to top,
+    rgba(10, 7, 2, 0.88) 0%,
+    rgba(10, 7, 2, 0.5) 70%,
+    transparent 100%
+  );
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ─── Dot Indicators ─────────────────────────────────────────── */
+
+#mural-dots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(201, 168, 76, 0.7);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+  flex-shrink: 0;
+}
+
+.dot:hover {
+  border-color: #c9a84c;
+  transform: scale(1.2);
+}
+
+.dot.active {
+  background: #c9a84c;
+  border-color: #c9a84c;
+  box-shadow: 0 0 8px rgba(201, 168, 76, 0.6), 0 0 16px rgba(201, 168, 76, 0.3);
+}
+
+/* ─── Light Button ───────────────────────────────────────────── */
+
+#light-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  background: rgba(10, 7, 2, 0.65);
+  border: 1px solid rgba(201, 168, 76, 0.45);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+#light-btn:hover {
+  background: rgba(30, 20, 5, 0.8);
+  border-color: rgba(201, 168, 76, 0.75);
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.2);
+}
+
+#light-btn:active {
+  transform: scale(0.96);
+}
+
+#light-btn .icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: filter 0.25s ease;
+}
+
+#light-btn .label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: rgba(201, 168, 76, 0.8);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color 0.25s ease;
+  white-space: nowrap;
+}
+
+/* Lights-on state */
+
+body.lights-on #light-btn {
+  background: rgba(201, 168, 76, 0.12);
+  border-color: rgba(201, 168, 76, 0.8);
+  box-shadow: 0 0 16px rgba(201, 168, 76, 0.25), inset 0 0 8px rgba(201, 168, 76, 0.08);
+}
+
+body.lights-on #light-btn .icon {
+  filter: drop-shadow(0 0 6px rgba(240, 200, 80, 0.9));
+}
+
+body.lights-on #light-btn .label {
+  color: #c9a84c;
+  text-shadow: 0 0 8px rgba(201, 168, 76, 0.5);
+}
+
+/* ─── Camera Video ───────────────────────────────────────────── */
+
+#camera-video {
+  display: none;
+}
+
+/* ─── Atmospheric vignette on mural container ────────────────── */
+
+#mural-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(10, 7, 2, 0.45) 75%,
+    rgba(10, 7, 2, 0.75) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Interaction Hint ───────────────────────────────────────── */
+
+#hint {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 22;
+  pointer-events: none;
+  text-align: center;
+  animation: pulse-hint 2.5s ease-in-out infinite;
+  transition: opacity 0.6s ease;
+  white-space: nowrap;
+}
+
+#hint.hidden {
+  opacity: 0;
+}
+
+#hint p {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+  font-style: italic;
+  color: rgba(201, 168, 76, 0.65);
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+}
+
+@keyframes pulse-hint {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
