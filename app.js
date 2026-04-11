@@ -193,8 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    // Candle body starts just inside the bottom edge of the halo
-    const candleTopY = cy + flickerR * 0.82;
+    // Candle body starts right at the bottom edge of the light circle (no gap)
+    const candleTopY = cy + flickerR - 4; // -4 so top of candle slightly overlaps halo edge
     const bodyW  = 11;
     const bodyH  = 50;
     const stemH  = 7;
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fill dark overlay — low opacity so dimmed mural is visible underneath
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
     ctx.fillRect(0, 0, w, h);
 
     if (candleActive) {
