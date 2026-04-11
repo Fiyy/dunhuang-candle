@@ -24,7 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let touchMode = false;
   let firstResult = true; // flag to hide loading screen on first MediaPipe result
 
-  const BASE_RADIUS = 100; // candle light radius in px
+  const BASE_RADIUS = 130; // candle light radius in px
+
+  // Candle graphic dimensions
+  const CANDLE_H = 80;      // total height of candle graphic below the light center
+  const FLAME_OFFSET = 10;  // flame sits slightly above the light center
 
   // ---------------------------------------------------------------------------
   // Canvas setup
@@ -180,6 +184,76 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------------------------------------------------------------------------
+  // Draw candle graphic — cx/cy is the flame/light center point
+  // ---------------------------------------------------------------------------
+  function drawCandle(ctx, cx, cy, flicker) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+
+    const bodyW  = 14;   // candle body half-width
+    const bodyH  = 48;   // candle body height
+    const baseW  = 22;   // base plate half-width
+    const baseH  = 6;    // base plate height
+    const stemH  = 10;   // stem between base and body
+    const top    = cy + FLAME_OFFSET; // top of candle body = just below flame
+
+    // ── Candle body ───────────────────────────────────────────────
+    const bodyGrad = ctx.createLinearGradient(cx - bodyW, 0, cx + bodyW, 0);
+    bodyGrad.addColorStop(0,   'rgba(220,200,160,0.55)');
+    bodyGrad.addColorStop(0.4, 'rgba(255,240,200,0.75)');
+    bodyGrad.addColorStop(1,   'rgba(180,160,120,0.55)');
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.roundRect(cx - bodyW, top, bodyW * 2, bodyH, 3);
+    ctx.fill();
+
+    // ── Stem ──────────────────────────────────────────────────────
+    ctx.fillStyle = 'rgba(200,180,130,0.6)';
+    ctx.fillRect(cx - 4, top + bodyH, 8, stemH);
+
+    // ── Base plate ────────────────────────────────────────────────
+    const baseGrad = ctx.createLinearGradient(cx - baseW, 0, cx + baseW, 0);
+    baseGrad.addColorStop(0,   'rgba(180,150,90,0.6)');
+    baseGrad.addColorStop(0.5, 'rgba(220,190,120,0.8)');
+    baseGrad.addColorStop(1,   'rgba(160,130,80,0.6)');
+    ctx.fillStyle = baseGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, top + bodyH + stemH + baseH * 0.5, baseW, baseH * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ── Flame ─────────────────────────────────────────────────────
+    const fFlicker = flicker * 2; // flame sways with flicker
+    const fx = cx + fFlicker;
+    const fy = cy - FLAME_OFFSET;
+
+    // Outer flame (orange)
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - 14);
+    ctx.bezierCurveTo(fx + 7, fy - 6, fx + 5, fy + 4, fx, fy + 6);
+    ctx.bezierCurveTo(fx - 5, fy + 4, fx - 7, fy - 6, fx, fy - 14);
+    ctx.fillStyle = 'rgba(255, 140, 20, 0.9)';
+    ctx.fill();
+
+    // Inner flame (bright yellow core)
+    ctx.beginPath();
+    ctx.moveTo(fx, fy - 9);
+    ctx.bezierCurveTo(fx + 3, fy - 3, fx + 2, fy + 2, fx, fy + 4);
+    ctx.bezierCurveTo(fx - 2, fy + 2, fx - 3, fy - 3, fx, fy - 9);
+    ctx.fillStyle = 'rgba(255, 240, 120, 0.95)';
+    ctx.fill();
+
+    // Wick
+    ctx.strokeStyle = 'rgba(80, 50, 20, 0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, top);
+    ctx.lineTo(fx, fy + 4);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // ---------------------------------------------------------------------------
   // Render loop — dark overlay with candle-light cutout
   // ---------------------------------------------------------------------------
   function render() {
@@ -193,35 +267,40 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Fill dark overlay
+    // Fill dark overlay — semi-transparent so mural silhouette is faintly visible
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.93)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
     ctx.fillRect(0, 0, w, h);
 
     if (candleActive) {
       // Subtle flicker: jitter radius and position slightly each frame
-      const flickerRadius = BASE_RADIUS + (Math.random() - 0.5) * BASE_RADIUS * 0.1;
-      const flickerX = candleX + (Math.random() - 0.5) * 4;
-      const flickerY = candleY + (Math.random() - 0.5) * 4;
+      const flicker = (Math.random() - 0.5);
+      const flickerRadius = BASE_RADIUS + flicker * BASE_RADIUS * 0.08;
+      const flickerX = candleX + flicker * 3;
+      const flickerY = candleY + (Math.random() - 0.5) * 2;
 
-      // Cut a transparent hole through the dark overlay using destination-out
+      // ── Light halo: cut transparent hole in dark overlay ──────────
       ctx.globalCompositeOperation = 'destination-out';
       const gradient = ctx.createRadialGradient(flickerX, flickerY, 0, flickerX, flickerY, flickerRadius);
-      gradient.addColorStop(0, 'rgba(0,0,0,1)');
-      gradient.addColorStop(0.5, 'rgba(0,0,0,0.9)');
-      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+      gradient.addColorStop(0,   'rgba(0,0,0,1)');
+      gradient.addColorStop(0.45,'rgba(0,0,0,0.95)');
+      gradient.addColorStop(0.75,'rgba(0,0,0,0.6)');
+      gradient.addColorStop(1,   'rgba(0,0,0,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(flickerX, flickerY, flickerRadius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Warm amber glow overlay on top of the revealed area
+      // ── Warm amber tint on revealed area ─────────────────────────
       ctx.globalCompositeOperation = 'source-over';
-      const warmGlow = ctx.createRadialGradient(flickerX, flickerY, 0, flickerX, flickerY, flickerRadius * 0.7);
-      warmGlow.addColorStop(0, 'rgba(255, 170, 50, 0.07)');
-      warmGlow.addColorStop(1, 'rgba(255, 170, 50, 0)');
+      const warmGlow = ctx.createRadialGradient(flickerX, flickerY, 0, flickerX, flickerY, flickerRadius * 0.8);
+      warmGlow.addColorStop(0, 'rgba(255, 160, 40, 0.12)');
+      warmGlow.addColorStop(1, 'rgba(255, 160, 40, 0)');
       ctx.fillStyle = warmGlow;
       ctx.fillRect(0, 0, w, h);
+
+      // ── Draw candle graphic below the light center ────────────────
+      drawCandle(ctx, flickerX, flickerY, flicker);
     }
 
     requestAnimationFrame(render);
