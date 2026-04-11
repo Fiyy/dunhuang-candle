@@ -93,6 +93,13 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 0;
+  /* Dim the mural in dark mode; transition removed when lights-on overrides */
+  filter: brightness(0.35);
+  transition: filter 0.6s ease;
+}
+
+body.lights-on #mural-container {
+  filter: brightness(1);
 }
 
 #mural-img {

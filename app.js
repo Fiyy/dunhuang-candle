@@ -280,9 +280,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Fill dark overlay — semi-transparent so mural silhouette is faintly visible
+    // Fill dark overlay — low opacity so dimmed mural is visible underneath
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.82)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
     ctx.fillRect(0, 0, w, h);
 
     if (candleActive) {
