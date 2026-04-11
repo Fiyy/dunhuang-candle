@@ -186,100 +186,81 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   // Draw candle graphic
   // cx/cy = center of the light halo (flame position).
-  // The physical candle body is drawn BELOW the halo's bottom edge,
-  // so it sits just outside the lit circle — visible in the dark.
+  // The physical candle body is drawn BELOW the halo's bottom edge.
+  // flickerR = current halo radius, breathe = smooth sine value (-1..1)
   // ---------------------------------------------------------------------------
-  function drawCandle(ctx, cx, cy, flicker) {
+  function drawCandle(ctx, cx, cy, flickerR, breathe) {
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    const flickerR = BASE_RADIUS + flicker * BASE_RADIUS * 0.08;
-
-    // Candle body starts at the bottom edge of the light circle
-    const candleTopY  = cy + flickerR * 0.85; // slightly inside bottom edge for overlap
-    const bodyW  = 12;
-    const bodyH  = 52;
-    const stemH  = 8;
-    const baseW  = 20;
+    // Candle body starts just inside the bottom edge of the halo
+    const candleTopY = cy + flickerR * 0.82;
+    const bodyW  = 11;
+    const bodyH  = 50;
+    const stemH  = 7;
+    const baseW  = 19;
     const baseH  = 5;
 
     // ── Candle body ───────────────────────────────────────────────
     const bodyGrad = ctx.createLinearGradient(cx - bodyW, 0, cx + bodyW, 0);
-    bodyGrad.addColorStop(0,   'rgba(200,175,130,0.7)');
-    bodyGrad.addColorStop(0.4, 'rgba(245,225,180,0.85)');
-    bodyGrad.addColorStop(1,   'rgba(170,145,100,0.7)');
+    bodyGrad.addColorStop(0,   'rgba(200,175,130,0.75)');
+    bodyGrad.addColorStop(0.4, 'rgba(245,225,180,0.9)');
+    bodyGrad.addColorStop(1,   'rgba(170,145,100,0.75)');
     ctx.fillStyle = bodyGrad;
     ctx.beginPath();
     ctx.roundRect(cx - bodyW, candleTopY, bodyW * 2, bodyH, 3);
     ctx.fill();
 
-    // ── Drip texture lines ────────────────────────────────────────
-    ctx.strokeStyle = 'rgba(220,200,155,0.4)';
-    ctx.lineWidth = 1;
-    for (let i = 1; i <= 3; i++) {
-      ctx.beginPath();
-      ctx.moveTo(cx - bodyW + 3, candleTopY + i * 12);
-      ctx.lineTo(cx - bodyW + 3 + 6, candleTopY + i * 12 + 5);
-      ctx.stroke();
-    }
-
     // ── Stem ──────────────────────────────────────────────────────
-    ctx.fillStyle = 'rgba(180,155,100,0.7)';
+    ctx.fillStyle = 'rgba(175,150,95,0.75)';
     ctx.fillRect(cx - 4, candleTopY + bodyH, 8, stemH);
 
-    // ── Base plate (ellipse) ──────────────────────────────────────
+    // ── Base plate ────────────────────────────────────────────────
     const baseGrad = ctx.createLinearGradient(cx - baseW, 0, cx + baseW, 0);
-    baseGrad.addColorStop(0,   'rgba(160,130,75,0.8)');
-    baseGrad.addColorStop(0.5, 'rgba(210,180,110,0.95)');
-    baseGrad.addColorStop(1,   'rgba(145,115,65,0.8)');
+    baseGrad.addColorStop(0,   'rgba(155,125,70,0.85)');
+    baseGrad.addColorStop(0.5, 'rgba(210,180,110,0.98)');
+    baseGrad.addColorStop(1,   'rgba(140,110,60,0.85)');
     ctx.fillStyle = baseGrad;
     ctx.beginPath();
     ctx.ellipse(cx, candleTopY + bodyH + stemH + baseH * 0.4,
                 baseW, baseH * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // ── Wick (short line from candle top up to flame) ─────────────
-    const wickSway = flicker * 2;
-    ctx.strokeStyle = 'rgba(60, 35, 10, 0.85)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(cx, candleTopY);          // top of candle body
-    ctx.lineTo(cx + wickSway, cy + 6);   // bottom of flame
-    ctx.stroke();
-
-    // ── Flame (drawn AT the halo center, top of wick) ─────────────
-    const fx = cx + wickSway;
+    // ── Flame — smooth sway via breathe, NO random jitter ─────────
+    // Flame is drawn AT cy (halo center), sways slightly left-right
+    const flameSway = breathe * 3;   // smooth horizontal sway ±3px
+    const fx = cx + flameSway;
     const fy = cy;
 
-    // Outer glow halo around flame
-    const flameGlow = ctx.createRadialGradient(fx, fy, 0, fx, fy, 22);
-    flameGlow.addColorStop(0,   'rgba(255,200,60,0.35)');
+    // Outer glow around flame (soft)
+    const flameGlow = ctx.createRadialGradient(fx, fy, 0, fx, fy, 20);
+    flameGlow.addColorStop(0,   'rgba(255,200,60,0.4)');
     flameGlow.addColorStop(1,   'rgba(255,140,20,0)');
     ctx.fillStyle = flameGlow;
     ctx.beginPath();
-    ctx.arc(fx, fy, 22, 0, Math.PI * 2);
+    ctx.arc(fx, fy, 20, 0, Math.PI * 2);
     ctx.fill();
 
     // Outer flame shape (orange teardrop)
     ctx.beginPath();
-    ctx.moveTo(fx, fy - 16);
-    ctx.bezierCurveTo(fx + 8,  fy - 6, fx + 6,  fy + 5, fx, fy + 7);
-    ctx.bezierCurveTo(fx - 6,  fy + 5, fx - 8,  fy - 6, fx, fy - 16);
+    ctx.moveTo(fx, fy - 15);
+    ctx.bezierCurveTo(fx + 8,  fy - 5, fx + 6,  fy + 5, fx, fy + 7);
+    ctx.bezierCurveTo(fx - 6,  fy + 5, fx - 8,  fy - 5, fx, fy - 15);
     ctx.fillStyle = 'rgba(255, 130, 15, 0.92)';
     ctx.fill();
 
-    // Inner flame (bright yellow core)
+    // Inner bright core
     ctx.beginPath();
     ctx.moveTo(fx, fy - 10);
-    ctx.bezierCurveTo(fx + 4, fy - 3, fx + 3, fy + 3, fx, fy + 5);
-    ctx.bezierCurveTo(fx - 3, fy + 3, fx - 4, fy - 3, fx, fy - 10);
+    ctx.bezierCurveTo(fx + 4, fy - 2, fx + 3, fy + 4, fx, fy + 6);
+    ctx.bezierCurveTo(fx - 3, fy + 4, fx - 4, fy - 2, fx, fy - 10);
     ctx.fillStyle = 'rgba(255, 245, 130, 0.98)';
     ctx.fill();
 
-    // White hot center
+    // White hot center dot
     ctx.beginPath();
-    ctx.arc(fx, fy - 2, 3, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 220, 0.9)';
+    ctx.arc(fx, fy, 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 230, 0.95)';
     ctx.fill();
 
     ctx.restore();
@@ -305,11 +286,15 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.fillRect(0, 0, w, h);
 
     if (candleActive) {
-      // Subtle flicker: jitter radius and position slightly each frame
-      const flicker = (Math.random() - 0.5);
-      const flickerRadius = BASE_RADIUS + flicker * BASE_RADIUS * 0.08;
-      const flickerX = candleX + flicker * 3;
-      const flickerY = candleY + (Math.random() - 0.5) * 2;
+      // Breathing flicker: smooth sine wave instead of per-frame random jitter
+      // This makes the glow pulse gently without the candle "shaking"
+      const t = Date.now() / 1000;
+      const breathe = Math.sin(t * 2.3) * 0.05 + Math.sin(t * 3.7) * 0.03;
+      const flickerRadius = BASE_RADIUS * (1 + breathe);
+
+      // Candle position is FIXED at candleX/Y — no random offset
+      const flickerX = candleX;
+      const flickerY = candleY;
 
       // ── Light halo: cut transparent hole in dark overlay ──────────
       ctx.globalCompositeOperation = 'destination-out';
@@ -332,7 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.fillRect(0, 0, w, h);
 
       // ── Draw candle graphic below the light center ────────────────
-      drawCandle(ctx, flickerX, flickerY, flicker);
+      // Pass breathe (not random) so flame flickers smoothly not jerkily
+      drawCandle(ctx, flickerX, flickerY, flickerRadius, breathe);
     }
 
     requestAnimationFrame(render);

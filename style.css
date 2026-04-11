@@ -103,8 +103,8 @@ html, body {
   object-fit: cover;
   object-position: center;
   transition: opacity 0.4s ease;
-  /* Ken Burns: very slow pan+zoom for cinematic life */
-  animation: ken-burns 40s ease-in-out infinite alternate;
+  /* Ken Burns: slow pan+zoom — 20s so it's clearly visible */
+  animation: ken-burns 20s ease-in-out infinite alternate;
   transform-origin: center center;
 }
 
