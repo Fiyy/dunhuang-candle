@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mural data
   // ---------------------------------------------------------------------------
   const MURALS = [
-    { src: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/Buddha_and_Bodhisattvas_Dunhuang_Mogao_Caves.png', title: 'Buddha and Bodhisattvas' },
-    { src: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Mogao_Cave_217.jpg', title: 'Cave 217 — Pure Land' },
-    { src: 'https://upload.wikimedia.org/wikipedia/commons/8/80/Mogao_Cave_156_battle.jpg', title: 'Cave 156 — Battle Scene' },
+    { src: 'murals/mural1.mp4', title: 'Buddha and Bodhisattvas', type: 'video' },
+    { src: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Mogao_Cave_217.jpg', title: 'Cave 217 — Pure Land', type: 'image' },
+    { src: 'https://upload.wikimedia.org/wikipedia/commons/8/80/Mogao_Cave_156_battle.jpg', title: 'Cave 156 — Battle Scene', type: 'image' },
   ];
 
   // ---------------------------------------------------------------------------
@@ -340,13 +340,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (index === currentMural) return;
     currentMural = index;
 
+    const mural = MURALS[index];
+    const video = document.getElementById('mural-video');
     const img = document.getElementById('mural-img');
+
+    // Fade out both
+    video.classList.add('fade');
     img.classList.add('fade');
 
     setTimeout(() => {
-      img.src = MURALS[index].src;
-      img.onload = () => img.classList.remove('fade');
-      document.getElementById('mural-title').textContent = MURALS[index].title;
+      if (mural.type === 'video') {
+        video.src = mural.src;
+        video.style.display = '';
+        img.style.display = 'none';
+        video.play().then(() => video.classList.remove('fade')).catch(() => video.classList.remove('fade'));
+      } else {
+        img.src = mural.src;
+        img.style.display = '';
+        video.style.display = 'none';
+        video.pause();
+        img.onload = () => img.classList.remove('fade');
+      }
+      document.getElementById('mural-title').textContent = mural.title;
     }, 300);
 
     // Update active dot

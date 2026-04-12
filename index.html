@@ -18,9 +18,12 @@
     </div>
   </div>
 
-  <!-- Layer 1: Mural Background -->
+  <!-- Layer 1: Mural Background (video for parallax, fallback to img) -->
   <div id="mural-container">
-    <img id="mural-img" src="https://upload.wikimedia.org/wikipedia/commons/c/ca/Buddha_and_Bodhisattvas_Dunhuang_Mogao_Caves.png" alt="Dunhuang Mural" crossorigin="anonymous">
+    <video id="mural-video" autoplay loop muted playsinline>
+      <source src="murals/mural1.mp4" type="video/mp4">
+    </video>
+    <img id="mural-img" src="https://upload.wikimedia.org/wikipedia/commons/c/ca/Buddha_and_Bodhisattvas_Dunhuang_Mogao_Caves.png" alt="Dunhuang Mural" crossorigin="anonymous" style="display:none;">
   </div>
 
   <!-- Layer 2: Dark Overlay Canvas -->

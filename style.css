@@ -101,7 +101,8 @@ body.lights-on #mural-container {
   filter: brightness(1);
 }
 
-#mural-img {
+#mural-img,
+#mural-video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -109,21 +110,11 @@ body.lights-on #mural-container {
   object-fit: cover;
   object-position: center;
   transition: opacity 0.4s ease;
-  /* Ken Burns: slow pan+zoom — 20s so it's clearly visible */
-  animation: ken-burns 20s ease-in-out infinite alternate;
-  transform-origin: center center;
 }
 
-#mural-img.fade {
+#mural-img.fade,
+#mural-video.fade {
   opacity: 0;
-}
-
-@keyframes ken-burns {
-  0%   { transform: scale(1.00) translate(0%,    0%);   }
-  25%  { transform: scale(1.04) translate(-1.5%, 0.5%); }
-  50%  { transform: scale(1.07) translate(0.5%,  -1%);  }
-  75%  { transform: scale(1.04) translate(1.5%,  0.8%); }
-  100% { transform: scale(1.00) translate(0%,    0%);   }
 }
 
 /* ─── Overlay Canvas ─────────────────────────────────────────── */
