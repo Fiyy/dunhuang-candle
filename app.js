@@ -277,9 +277,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // MUST clear first — otherwise dark overlay accumulates every frame
+    ctx.clearRect(0, 0, w, h);
+
     // Fill dark overlay — low opacity so dimmed mural is visible underneath
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
     ctx.fillRect(0, 0, w, h);
 
     if (candleActive) {
@@ -388,6 +391,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Kick everything off
   // ---------------------------------------------------------------------------
   render();
+
+  // Safety timeout: hide loading screen after 5s even if MediaPipe fails
+  setTimeout(() => {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen && !loadingScreen.classList.contains('fade-out')) {
+      loadingScreen.classList.add('fade-out');
+      console.warn('Loading screen timeout — MediaPipe may have failed to load');
+    }
+  }, 5000);
+
   initCamera();
 
 }); // end DOMContentLoaded
