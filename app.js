@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mural data
   // ---------------------------------------------------------------------------
   const MURALS = [
-    { src: 'murals/mural1.mp4', title: 'Buddha and Bodhisattvas', type: 'video' },
+    { src: 'murals/mural1_layered.mp4', title: 'Buddha and Bodhisattvas', type: 'video' },
     { src: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Mogao_Cave_217.jpg', title: 'Cave 217 — Pure Land', type: 'image' },
     { src: 'https://upload.wikimedia.org/wikipedia/commons/8/80/Mogao_Cave_156_battle.jpg', title: 'Cave 156 — Battle Scene', type: 'image' },
   ];
