@@ -194,31 +194,31 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
 
-    const bodyW = 11;
-    const bodyH = flameY - baseY + 10; // spans from base up to just below flame
+    const bodyW = 6;
+    const bodyH = flameY - baseY + 10;
     const stemH = 8;
-    const baseW = 19;
-    const baseEH = 5; // base ellipse height
+    const baseW = 12;
+    const baseEH = 4;
 
-    // ── Candle body (completely static — no flickerR involved) ─────
+    // ── Candle body (ghostly, semi-transparent) ──────────────────
     const bodyGrad = ctx.createLinearGradient(baseX - bodyW, 0, baseX + bodyW, 0);
-    bodyGrad.addColorStop(0,   'rgba(200,175,130,0.8)');
-    bodyGrad.addColorStop(0.4, 'rgba(245,225,180,0.95)');
-    bodyGrad.addColorStop(1,   'rgba(170,145,100,0.8)');
+    bodyGrad.addColorStop(0,   'rgba(200,175,130,0.3)');
+    bodyGrad.addColorStop(0.4, 'rgba(245,225,180,0.4)');
+    bodyGrad.addColorStop(1,   'rgba(170,145,100,0.3)');
     ctx.fillStyle = bodyGrad;
     ctx.beginPath();
     ctx.roundRect(baseX - bodyW, flameY + 8, bodyW * 2, -bodyH, 3);
     ctx.fill();
 
     // ── Stem ──────────────────────────────────────────────────────
-    ctx.fillStyle = 'rgba(175,150,95,0.8)';
-    ctx.fillRect(baseX - 4, baseY - stemH, 8, stemH);
+    ctx.fillStyle = 'rgba(175,150,95,0.3)';
+    ctx.fillRect(baseX - 3, baseY - stemH, 6, stemH);
 
     // ── Base plate ────────────────────────────────────────────────
     const bGrad = ctx.createLinearGradient(baseX - baseW, 0, baseX + baseW, 0);
-    bGrad.addColorStop(0,   'rgba(155,125,70,0.9)');
-    bGrad.addColorStop(0.5, 'rgba(210,180,110,1)');
-    bGrad.addColorStop(1,   'rgba(140,110,60,0.9)');
+    bGrad.addColorStop(0,   'rgba(155,125,70,0.35)');
+    bGrad.addColorStop(0.5, 'rgba(210,180,110,0.45)');
+    bGrad.addColorStop(1,   'rgba(140,110,60,0.35)');
     ctx.fillStyle = bGrad;
     ctx.beginPath();
     ctx.ellipse(baseX, baseY, baseW, baseEH * 0.55, 0, 0, Math.PI * 2);
