@@ -25,10 +25,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let firstResult = true; // flag to hide loading screen on first MediaPipe result
   let zoomLevel = 1.0; // zoom level for mural (1.0 = 100%, 3.0 = 300%)
 
+  // Pinch-to-zoom state
+  let isPinching = false;
+  let pinchBaselineDistance = null;
+  let pinchBaselineZoom = 1.0;
+
+  // Pan state (for zoomed view)
+  let isPanning = false;
+  let panStartX = 0, panStartY = 0;
+  let currentPanX = 0, currentPanY = 0;
+  let panOffsetX = 0, panOffsetY = 0;
+
   const BASE_RADIUS = 130; // candle light radius in px
-  const ZOOM_STEP = 0.3; // zoom increment per gesture
   const MIN_ZOOM = 1.0;
   const MAX_ZOOM = 3.0;
+  const PINCH_THRESHOLD = 0.15; // normalized distance threshold for pinch detection
 
   // The candle graphic sits BELOW the light circle.
   // candleX/Y = center of the light halo (= where the flame is)
@@ -85,6 +96,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------------------------------------------------------------------------
+  // Custom pinch detection (thumb-index distance)
+  // ---------------------------------------------------------------------------
+  function detectPinch(landmarks) {
+    const thumbTip = landmarks[4];
+    const indexTip = landmarks[8];
+
+    const distance = Math.hypot(
+      thumbTip.x - indexTip.x,
+      thumbTip.y - indexTip.y
+    );
+
+    return {
+      isPinching: distance < PINCH_THRESHOLD,
+      distance: distance
+    };
+  }
+
+  // ---------------------------------------------------------------------------
   // Gesture results handler
   // ---------------------------------------------------------------------------
   function onGestureResults(result) {
@@ -96,12 +125,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!result.gestures || result.gestures.length === 0) {
       candleActive = false;
+      isPinching = false;
+      isPanning = false;
       return;
     }
 
     const gesture = result.gestures[0][0];
     const landmarks = result.landmarks[0];
 
+    // Custom pinch detection (runs alongside Gesture Recognizer)
+    const pinchData = detectPinch(landmarks);
+
+    if (pinchData.isPinching) {
+      // Pinch gesture detected - continuous zoom
+      if (!isPinching) {
+        // Pinch started
+        isPinching = true;
+        pinchBaselineDistance = pinchData.distance;
+        pinchBaselineZoom = zoomLevel;
+      } else {
+        // Pinch continuing - update zoom
+        const zoomFactor = pinchData.distance / pinchBaselineDistance;
+        applyZoom(pinchBaselineZoom * zoomFactor);
+      }
+      return; // Skip other gesture processing while pinching
+    } else {
+      isPinching = false;
+    }
+
+    // Process recognized gestures
     switch (gesture.categoryName) {
       case "Closed_Fist":
         // Light the candle (continuous gesture - follows hand)
@@ -109,13 +161,35 @@ document.addEventListener('DOMContentLoaded', () => {
         candleX = (1 - palm.x) * overlayCanvas.width;
         candleY = palm.y * overlayCanvas.height;
         candleActive = true;
+        isPanning = false; // Stop panning when lighting candle
         const hint = document.getElementById('hint');
         if (hint) hint.classList.add('hidden');
         break;
 
       case "Open_Palm":
-        // Extinguish candle
-        candleActive = false;
+        // Smart behavior: extinguish when not zoomed, pan when zoomed
+        if (zoomLevel > 1.0) {
+          // Zoomed in - enable pan mode
+          if (!isPanning) {
+            isPanning = true;
+            panStartX = (1 - landmarks[9].x) * overlayCanvas.width;
+            panStartY = landmarks[9].y * overlayCanvas.height;
+            panOffsetX = currentPanX;
+            panOffsetY = currentPanY;
+          } else {
+            // Update pan position
+            const palmX = (1 - landmarks[9].x) * overlayCanvas.width;
+            const palmY = landmarks[9].y * overlayCanvas.height;
+            currentPanX = panOffsetX + (palmX - panStartX);
+            currentPanY = panOffsetY + (palmY - panStartY);
+            applyPan(currentPanX, currentPanY);
+          }
+          candleActive = false; // Extinguish candle while panning
+        } else {
+          // Not zoomed - extinguish candle
+          candleActive = false;
+          isPanning = false;
+        }
         break;
 
       case "Victory":
@@ -125,32 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         break;
 
-      case "Thumb_Up":
-        // Toggle lights (discrete gesture with cooldown)
-        if (isGestureCooledDown("Thumb_Up")) {
-          lightsOn = !lightsOn;
-          document.body.classList.toggle('lights-on', lightsOn);
-          const label = document.querySelector('#light-btn .label');
-          if (label) label.textContent = lightsOn ? 'Light Off' : 'Light On';
-        }
-        break;
-
-      case "Pointing_Up":
-        // Zoom in (discrete gesture with cooldown)
-        if (isGestureCooledDown("Pointing_Up")) {
-          applyZoom(zoomLevel + ZOOM_STEP);
-        }
-        break;
-
-      case "Thumb_Down":
-        // Zoom out (discrete gesture with cooldown)
-        if (isGestureCooledDown("Thumb_Down")) {
-          applyZoom(zoomLevel - ZOOM_STEP);
-        }
-        break;
-
       default:
         // Unknown gesture - keep current state
+        isPanning = false;
         break;
     }
   }
@@ -373,15 +424,39 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------------------------------------------------------------------------
-  // Zoom control
+  // Zoom and pan control
   // ---------------------------------------------------------------------------
   function applyZoom(newZoom) {
     zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-    const muralContainer = document.getElementById('mural-container');
-    muralContainer.style.transform = `scale(${zoomLevel})`;
 
-    // Show zoom indicator briefly
+    // Reset pan when zooming back to 100%
+    if (zoomLevel === 1.0) {
+      currentPanX = 0;
+      currentPanY = 0;
+      isPanning = false;
+    }
+
+    applyTransform();
     showZoomIndicator();
+  }
+
+  function applyPan(x, y) {
+    // Clamp pan offsets to prevent panning off-screen
+    const maxPanX = (overlayCanvas.width * (zoomLevel - 1)) / (2 * zoomLevel);
+    const maxPanY = (overlayCanvas.height * (zoomLevel - 1)) / (2 * zoomLevel);
+
+    currentPanX = Math.max(-maxPanX, Math.min(maxPanX, x));
+    currentPanY = Math.max(-maxPanY, Math.min(maxPanY, y));
+
+    applyTransform();
+  }
+
+  function applyTransform() {
+    const muralContainer = document.getElementById('mural-container');
+    // Translate in scaled space (divide by zoom to get correct pixel offset)
+    const translateX = currentPanX / zoomLevel;
+    const translateY = currentPanY / zoomLevel;
+    muralContainer.style.transform = `scale(${zoomLevel}) translate(${translateX}px, ${translateY}px)`;
   }
 
   function showZoomIndicator() {
@@ -414,6 +489,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function switchMural(index) {
     if (index === currentMural) return;
     currentMural = index;
+
+    // Reset zoom and pan
+    zoomLevel = 1.0;
+    currentPanX = 0;
+    currentPanY = 0;
+    isPanning = false;
+    applyTransform();
 
     const mural = MURALS[index];
     const video = document.getElementById('mural-video');
