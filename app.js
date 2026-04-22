@@ -23,8 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentMural = 0;
   let touchMode = false;
   let firstResult = true; // flag to hide loading screen on first MediaPipe result
+  let zoomLevel = 1.0; // zoom level for mural (1.0 = 100%, 3.0 = 300%)
 
   const BASE_RADIUS = 130; // candle light radius in px
+  const ZOOM_STEP = 0.3; // zoom increment per gesture
+  const MIN_ZOOM = 1.0;
+  const MAX_ZOOM = 3.0;
 
   // The candle graphic sits BELOW the light circle.
   // candleX/Y = center of the light halo (= where the flame is)
@@ -128,6 +132,20 @@ document.addEventListener('DOMContentLoaded', () => {
           document.body.classList.toggle('lights-on', lightsOn);
           const label = document.querySelector('#light-btn .label');
           if (label) label.textContent = lightsOn ? 'Light Off' : 'Light On';
+        }
+        break;
+
+      case "Pointing_Up":
+        // Zoom in (discrete gesture with cooldown)
+        if (isGestureCooledDown("Pointing_Up")) {
+          applyZoom(zoomLevel + ZOOM_STEP);
+        }
+        break;
+
+      case "Thumb_Down":
+        // Zoom out (discrete gesture with cooldown)
+        if (isGestureCooledDown("Thumb_Down")) {
+          applyZoom(zoomLevel - ZOOM_STEP);
         }
         break;
 
@@ -352,6 +370,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     requestAnimationFrame(render);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Zoom control
+  // ---------------------------------------------------------------------------
+  function applyZoom(newZoom) {
+    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+    const muralContainer = document.getElementById('mural-container');
+    muralContainer.style.transform = `scale(${zoomLevel})`;
+
+    // Show zoom indicator briefly
+    showZoomIndicator();
+  }
+
+  function showZoomIndicator() {
+    const indicator = document.getElementById('zoom-indicator');
+    if (!indicator) return;
+
+    indicator.textContent = `${Math.round(zoomLevel * 100)}%`;
+    indicator.classList.remove('hidden');
+
+    // Hide after 1.5 seconds
+    clearTimeout(showZoomIndicator.timeout);
+    showZoomIndicator.timeout = setTimeout(() => {
+      indicator.classList.add('hidden');
+    }, 1500);
   }
 
   // ---------------------------------------------------------------------------
