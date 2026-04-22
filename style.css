@@ -367,6 +367,13 @@ body.lights-on #light-btn .label {
   color: rgba(201, 168, 76, 0.65);
   letter-spacing: 0.06em;
   text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+  margin: 0;
+}
+
+#hint p.hint-sub {
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
+  color: rgba(201, 168, 76, 0.45);
+  margin-top: 4px;
 }
 
 @keyframes pulse-hint {

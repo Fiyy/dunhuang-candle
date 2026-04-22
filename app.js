@@ -44,77 +44,96 @@ document.addEventListener('DOMContentLoaded', () => {
   resizeCanvas();
 
   // ---------------------------------------------------------------------------
-  // Helper: Euclidean distance between two landmarks (normalized coords)
+  // MediaPipe Gesture Recognizer init
   // ---------------------------------------------------------------------------
-  function dist(a, b) {
-    return Math.hypot(a.x - b.x, a.y - b.y);
+  let gestureRecognizer;
+  let lastVideoTime = -1;
+  let lastGestureTime = {};
+  const GESTURE_COOLDOWN = 1000; // 1 second cooldown for discrete gestures
+
+  async function initGestureRecognizer() {
+    const { GestureRecognizer, FilesetResolver } = await import(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest"
+    );
+
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    );
+
+    gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+        delegate: "GPU"
+      },
+      runningMode: "VIDEO",
+      numHands: 1
+    });
+  }
+
+  function isGestureCooledDown(gestureName) {
+    const now = Date.now();
+    if (lastGestureTime[gestureName] && now - lastGestureTime[gestureName] < GESTURE_COOLDOWN) {
+      return false;
+    }
+    lastGestureTime[gestureName] = now;
+    return true;
   }
 
   // ---------------------------------------------------------------------------
-  // MediaPipe Hands init
+  // Gesture results handler
   // ---------------------------------------------------------------------------
-  const hands = new Hands({
-    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-  });
-
-  hands.setOptions({
-    maxNumHands: 1,
-    modelComplexity: 0,
-    minDetectionConfidence: 0.5,
-    minTrackingConfidence: 0.5
-  });
-
-  hands.onResults(onHandResults);
-
-  // ---------------------------------------------------------------------------
-  // Fist detection + hand results handler
-  // ---------------------------------------------------------------------------
-  function onHandResults(results) {
-    // Hide loading screen on the very first result
+  function onGestureResults(result) {
+    // Hide loading screen on first result
     if (firstResult) {
       firstResult = false;
       document.getElementById('loading-screen').classList.add('fade-out');
     }
 
-    if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+    if (!result.gestures || result.gestures.length === 0) {
       candleActive = false;
       return;
     }
 
-    const landmarks = results.multiHandLandmarks[0];
+    const gesture = result.gestures[0][0];
+    const landmarks = result.landmarks[0];
 
-    // Landmark indices
-    const WRIST = 0;
-    // Finger MCPs and TIPs
-    const FINGERS = [
-      { mcp: 5,  tip: 8  }, // index
-      { mcp: 9,  tip: 12 }, // middle
-      { mcp: 13, tip: 16 }, // ring
-      { mcp: 17, tip: 20 }, // pinky
-    ];
+    switch (gesture.categoryName) {
+      case "Closed_Fist":
+        // Light the candle (continuous gesture - follows hand)
+        const palm = landmarks[9]; // middle finger MCP
+        candleX = (1 - palm.x) * overlayCanvas.width;
+        candleY = palm.y * overlayCanvas.height;
+        candleActive = true;
+        const hint = document.getElementById('hint');
+        if (hint) hint.classList.add('hidden');
+        break;
 
-    // Count fingers where tip is closer to wrist than mcp is (i.e. curled)
-    let curledCount = 0;
-    for (const finger of FINGERS) {
-      const tipDist = dist(landmarks[finger.tip], landmarks[WRIST]);
-      const mcpDist = dist(landmarks[finger.mcp], landmarks[WRIST]);
-      if (tipDist < mcpDist) curledCount++;
-    }
+      case "Open_Palm":
+        // Extinguish candle
+        candleActive = false;
+        break;
 
-    const isFist = curledCount >= 3;
+      case "Victory":
+        // Next mural (discrete gesture with cooldown)
+        if (isGestureCooledDown("Victory")) {
+          switchMural((currentMural + 1) % MURALS.length);
+        }
+        break;
 
-    if (isFist) {
-      // Use middle finger MCP (landmark 9) as palm center
-      const palm = landmarks[9];
-      // Mirror X for front-facing camera
-      candleX = (1 - palm.x) * overlayCanvas.width;
-      candleY = palm.y * overlayCanvas.height;
-      candleActive = true;
-      // Hide the hint after first successful gesture
-      const hint = document.getElementById('hint');
-      if (hint) hint.classList.add('hidden');
-    } else {
-      candleActive = false;
+      case "Thumb_Up":
+        // Toggle lights (discrete gesture with cooldown)
+        if (isGestureCooledDown("Thumb_Up")) {
+          lightsOn = !lightsOn;
+          document.body.classList.toggle('lights-on', lightsOn);
+          const label = document.querySelector('#light-btn .label');
+          if (label) label.textContent = lightsOn ? 'Light Off' : 'Light On';
+        }
+        break;
+
+      default:
+        // Unknown gesture - keep current state
+        break;
     }
   }
 
@@ -123,17 +142,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   async function initCamera() {
     try {
+      await initGestureRecognizer();
+
       const video = document.getElementById('camera-video');
-      const camera = new Camera(video, {
-        onFrame: async () => {
-          await hands.send({ image: video });
-        },
-        width: 640,
-        height: 480,
-        facingMode: 'user'
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: 'user' }
       });
-      await camera.start();
-      // Loading screen is hidden on first onResults call
+      video.srcObject = stream;
+      await video.play();
+
+      // Process frames
+      function processFrame() {
+        if (video.currentTime !== lastVideoTime) {
+          lastVideoTime = video.currentTime;
+          const result = gestureRecognizer.recognizeForVideo(video, Date.now());
+          onGestureResults(result);
+        }
+        requestAnimationFrame(processFrame);
+      }
+      processFrame();
+
     } catch (e) {
       console.warn('Camera unavailable, switching to touch mode:', e);
       enableTouchMode();
