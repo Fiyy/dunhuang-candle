@@ -1,7 +1,8 @@
 /**
  * Dunhuang Cave Mural Candle Explorer
- * Uses MediaPipe Hands (fist gesture) or touch to reveal murals with a candle-light effect.
+ * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
+const APP_VERSION = 'v0.6.0';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -97,35 +98,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------------------------------------------------------------------------
   // Custom pinch detection (thumb-index distance)
+  // Only valid when other fingers are extended (not a fist)
   // ---------------------------------------------------------------------------
-  function detectPinch(landmarks, recognizedGesture) {
-    // Never treat a recognized fist as pinch
-    if (recognizedGesture === 'Closed_Fist') {
-      return { isPinching: false, distance: 0 };
-    }
-
+  function detectPinch(landmarks) {
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
     const middleTip = landmarks[12];
     const ringTip = landmarks[16];
-    const pinkyTip = landmarks[20];
     const middlePip = landmarks[10];
     const ringPip = landmarks[14];
-    const pinkyPip = landmarks[18];
 
     const distance = Math.hypot(
       thumbTip.x - indexTip.x,
       thumbTip.y - indexTip.y
     );
 
-    // For a true pinch, other fingers should be mostly extended, not curled into a fist
+    // Pinch requires middle + ring fingers extended (not curled)
     const middleExtended = middleTip.y < middlePip.y;
     const ringExtended = ringTip.y < ringPip.y;
-    const pinkyExtended = pinkyTip.y < pinkyPip.y;
-    const extendedCount = [middleExtended, ringExtended, pinkyExtended].filter(Boolean).length;
 
     return {
-      isPinching: distance < PINCH_THRESHOLD && extendedCount >= 2,
+      isPinching: distance < PINCH_THRESHOLD && middleExtended && ringExtended,
       distance: distance
     };
   }
@@ -149,44 +142,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const gesture = result.gestures[0][0];
     const landmarks = result.landmarks[0];
+    let handled = false;
 
-    // Custom pinch detection — skip if Gesture Recognizer says it's a fist
-    const pinchData = detectPinch(landmarks, gesture.categoryName);
-
-    if (pinchData.isPinching) {
-      // Pinch gesture detected - continuous zoom
-      if (!isPinching) {
-        // Pinch started
-        isPinching = true;
-        pinchBaselineDistance = pinchData.distance;
-        pinchBaselineZoom = zoomLevel;
-      } else {
-        // Pinch continuing - update zoom
-        const zoomFactor = pinchData.distance / pinchBaselineDistance;
-        applyZoom(pinchBaselineZoom * zoomFactor);
-      }
-      return; // Skip other gesture processing while pinching
-    } else {
-      isPinching = false;
-    }
-
-    // Process recognized gestures
+    // Priority 1: Gesture Recognizer results (fist, palm, victory)
     switch (gesture.categoryName) {
       case "Closed_Fist":
         // Light the candle (continuous gesture - follows hand)
-        const palm = landmarks[9]; // middle finger MCP
+        const palm = landmarks[9];
         candleX = (1 - palm.x) * overlayCanvas.width;
         candleY = palm.y * overlayCanvas.height;
         candleActive = true;
-        isPanning = false; // Stop panning when lighting candle
+        isPinching = false;
+        isPanning = false;
         const hint = document.getElementById('hint');
         if (hint) hint.classList.add('hidden');
+        handled = true;
         break;
 
       case "Open_Palm":
         // Smart behavior: extinguish when not zoomed, pan when zoomed
         if (zoomLevel > 1.0) {
-          // Zoomed in - enable pan mode
           if (!isPanning) {
             isPanning = true;
             panStartX = (1 - landmarks[9].x) * overlayCanvas.width;
@@ -194,32 +169,50 @@ document.addEventListener('DOMContentLoaded', () => {
             panOffsetX = currentPanX;
             panOffsetY = currentPanY;
           } else {
-            // Update pan position
             const palmX = (1 - landmarks[9].x) * overlayCanvas.width;
             const palmY = landmarks[9].y * overlayCanvas.height;
             currentPanX = panOffsetX + (palmX - panStartX);
             currentPanY = panOffsetY + (palmY - panStartY);
             applyPan(currentPanX, currentPanY);
           }
-          candleActive = false; // Extinguish candle while panning
+          candleActive = false;
         } else {
-          // Not zoomed - extinguish candle
           candleActive = false;
           isPanning = false;
         }
+        isPinching = false;
+        handled = true;
         break;
 
       case "Victory":
-        // Next mural (discrete gesture with cooldown)
         if (isGestureCooledDown("Victory")) {
           switchMural((currentMural + 1) % MURALS.length);
         }
-        break;
-
-      default:
-        // Unknown gesture - keep current state
+        isPinching = false;
         isPanning = false;
+        handled = true;
         break;
+    }
+
+    // Priority 2: Custom pinch detection (only if no known gesture matched)
+    if (!handled) {
+      const pinchData = detectPinch(landmarks);
+
+      if (pinchData.isPinching) {
+        if (!isPinching) {
+          isPinching = true;
+          pinchBaselineDistance = pinchData.distance;
+          pinchBaselineZoom = zoomLevel;
+        } else {
+          const zoomFactor = pinchData.distance / pinchBaselineDistance;
+          applyZoom(pinchBaselineZoom * zoomFactor);
+        }
+        candleActive = false;
+        isPanning = false;
+      } else {
+        isPinching = false;
+        isPanning = false;
+      }
     }
   }
 
@@ -561,6 +554,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   // Kick everything off
   // ---------------------------------------------------------------------------
+  const versionBadge = document.getElementById('version-badge');
+  if (versionBadge) versionBadge.textContent = APP_VERSION;
+
   render();
 
   // Safety timeout: hide loading screen after 5s even if MediaPipe fails

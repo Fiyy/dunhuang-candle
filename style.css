@@ -225,6 +225,21 @@ body.lights-on #mural-container {
   pointer-events: none;
 }
 
+#version-badge {
+  position: fixed;
+  bottom: 8px;
+  right: 8px;
+  z-index: 21;
+  padding: 3px 10px;
+  background: rgba(10, 7, 2, 0.7);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  color: rgba(201, 168, 76, 0.5);
+  pointer-events: none;
+}
+
 #mode-text {
   font-family: 'Cormorant Garamond', serif;
   font-size: 0.78rem;
