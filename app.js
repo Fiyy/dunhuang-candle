@@ -98,17 +98,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   // Custom pinch detection (thumb-index distance)
   // ---------------------------------------------------------------------------
-  function detectPinch(landmarks) {
+  function detectPinch(landmarks, recognizedGesture) {
+    // Never treat a recognized fist as pinch
+    if (recognizedGesture === 'Closed_Fist') {
+      return { isPinching: false, distance: 0 };
+    }
+
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
+    const middleTip = landmarks[12];
+    const ringTip = landmarks[16];
+    const pinkyTip = landmarks[20];
+    const middlePip = landmarks[10];
+    const ringPip = landmarks[14];
+    const pinkyPip = landmarks[18];
 
     const distance = Math.hypot(
       thumbTip.x - indexTip.x,
       thumbTip.y - indexTip.y
     );
 
+    // For a true pinch, other fingers should be mostly extended, not curled into a fist
+    const middleExtended = middleTip.y < middlePip.y;
+    const ringExtended = ringTip.y < ringPip.y;
+    const pinkyExtended = pinkyTip.y < pinkyPip.y;
+    const extendedCount = [middleExtended, ringExtended, pinkyExtended].filter(Boolean).length;
+
     return {
-      isPinching: distance < PINCH_THRESHOLD,
+      isPinching: distance < PINCH_THRESHOLD && extendedCount >= 2,
       distance: distance
     };
   }
@@ -133,8 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const gesture = result.gestures[0][0];
     const landmarks = result.landmarks[0];
 
-    // Custom pinch detection (runs alongside Gesture Recognizer)
-    const pinchData = detectPinch(landmarks);
+    // Custom pinch detection — skip if Gesture Recognizer says it's a fist
+    const pinchData = detectPinch(landmarks, gesture.categoryName);
 
     if (pinchData.isPinching) {
       // Pinch gesture detected - continuous zoom
