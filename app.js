@@ -2,7 +2,7 @@
  * Dunhuang Cave Mural Candle Explorer
  * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
-const APP_VERSION = 'v0.8.2';
+const APP_VERSION = 'v0.8.3';
 const MEDIAPIPE_VERSION = '0.10.34';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -594,9 +594,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // MUST clear first — otherwise dark overlay accumulates every frame
     ctx.clearRect(0, 0, w, h);
 
-    // Fill dark overlay — low opacity so dimmed mural is visible underneath
+    // Fill dark overlay. Keep the unlit state close to cave darkness; the
+    // candle cutout is responsible for revealing mural detail.
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
     ctx.fillRect(0, 0, w, h);
 
     if (candleActive) {

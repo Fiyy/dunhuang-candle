@@ -11,6 +11,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Static app entry: `index.html`.
 - Styling and responsive UI: `style.css`.
 - Runtime interaction and rendering: `app.js`.
+- Atmosphere layer: CSS-only floating dust sits above the dark canvas and below controls.
 - Offline media tooling: `gen_parallax.py`, `segment_mural.py`, `segment_mural_v2.py`, `segment_mural_v3.py`.
 - Deployment: GitHub Pages workflow uploads the repository root on pushes to `main`.
 
@@ -26,13 +27,16 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Global `Light On / Off` is controlled only by the button.
 - Touch fallback supports one-finger candle movement and two-finger zoom.
 - Desktop fallback supports mouse drag and mouse wheel zoom.
+- Unlit state is intentionally dark; mural detail is primarily revealed by the candle or manual `Light On`.
 
 ## Validation Status
 
 - `node --check app.js`: passing as of 2026-04-26.
 - `git diff --check`: passing as of 2026-04-26.
+- Dark-state and dust implementation: code-level checks passing as of 2026-04-26.
 - Real camera gesture testing: still required on target devices.
 - Mobile touch fallback testing: still required on target devices.
+- Browser visual tuning on target display/projector: still required.
 - GitHub Pages deployment validation after latest changes: still required.
 
 ## Current Risks
@@ -41,6 +45,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Distance-based zoom is an approximation based on hand landmark scale, not true depth.
 - The app depends on external MediaPipe CDN/model hosting and remote Wikimedia mural images.
 - No automated browser test suite exists yet.
+- Darkness and dust visibility are display-dependent and may need calibration for exhibition hardware.
 - Git remote previously contained a credential-bearing URL in local config. The remote has been sanitized locally, but the exposed token should be considered compromised and rotated.
 
 ## Next Recommended Tasks

@@ -4,6 +4,30 @@
 
 ### Summary
 
+Darkened the unlit mural state and added a CSS-only floating dust layer for a stronger cave/history atmosphere.
+
+### Affected Areas / Files
+
+- `app.js`
+- `index.html`
+- `style.css`
+- `docs/development/PROJECT_STATUS.md`
+- `docs/development/CODEX_PROGRESS_LOG.md`
+
+### Verification
+
+- `node --check app.js`: passing.
+- `git diff --check`: passing.
+- Browser visual validation: still required.
+
+### Remaining Risk / Next Step
+
+Tune dust opacity and unlit darkness on the target display because projector, phone, and laptop brightness differ significantly.
+
+## 2026-04-26
+
+### Summary
+
 Added project documentation and repository-level agent instructions based on the `gisprefabhouse` workflow pattern.
 Sanitized the local `origin` remote URL to remove an embedded token.
 
