@@ -1,6 +1,6 @@
 # Dunhuang Candle
 
-An interactive Dunhuang mural explorer. The page uses a candle-light reveal effect, MediaPipe hand gesture recognition, and a touch fallback for devices without camera access.
+An interactive Dunhuang mural explorer. The page uses local image backgrounds, a candle-light reveal effect, MediaPipe hand gesture recognition, and a touch fallback for devices without camera access.
 
 ## Current Interaction
 

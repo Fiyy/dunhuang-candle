@@ -11,6 +11,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Static app entry: `index.html`.
 - Styling and responsive UI: `style.css`.
 - Runtime interaction and rendering: `app.js`.
+- Background images: local PNG files from `image/` are used for all three mural/background slots.
 - Atmosphere layer: CSS-only background dust and drifting foreground motes sit above the dark canvas and below controls.
 - Offline media tooling: `gen_parallax.py`, `segment_mural.py`, `segment_mural_v2.py`, `segment_mural_v3.py`.
 - Deployment: GitHub Pages workflow uploads the repository root on pushes to `main`.
@@ -43,7 +44,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 
 - Grip recognition may vary by device, light, skin tone, camera angle, and distance.
 - Distance-based zoom is an approximation based on hand landmark scale, not true depth.
-- The app depends on external MediaPipe CDN/model hosting and remote Wikimedia mural images.
+- The app depends on external MediaPipe CDN/model hosting, but mural/background images are local.
 - No automated browser test suite exists yet.
 - Darkness and dust visibility are display-dependent and may need calibration for exhibition hardware.
 - Git remote previously contained a credential-bearing URL in local config. The remote has been sanitized locally, but the exposed token should be considered compromised and rotated.

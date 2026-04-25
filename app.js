@@ -2,7 +2,7 @@
  * Dunhuang Cave Mural Candle Explorer
  * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
-const APP_VERSION = 'v0.8.5';
+const APP_VERSION = 'v0.8.6';
 const MEDIAPIPE_VERSION = '0.10.34';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mural data
   // ---------------------------------------------------------------------------
   const MURALS = [
-    { src: 'murals/mural1_layered.mp4', title: 'Buddha and Bodhisattvas', type: 'video' },
-    { src: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Mogao_Cave_217.jpg', title: 'Cave 217 — Pure Land', type: 'image' },
-    { src: 'https://upload.wikimedia.org/wikipedia/commons/8/80/Mogao_Cave_156_battle.jpg', title: 'Cave 156 — Battle Scene', type: 'image' },
+    { src: 'image/ChatGPT%20Image%20Apr%2022,%202026,%2010_29_11%20PM.png', title: 'Dunhuang Candle I', type: 'image' },
+    { src: 'image/ChatGPT%20Image%20Apr%2022,%202026,%2010_48_57%20PM.png', title: 'Dunhuang Candle II', type: 'image' },
+    { src: 'image/ChatGPT%20Image%20Apr%2022,%202026,%2011_03_19%20PM.png', title: 'Dunhuang Candle III', type: 'image' },
   ];
 
   // ---------------------------------------------------------------------------

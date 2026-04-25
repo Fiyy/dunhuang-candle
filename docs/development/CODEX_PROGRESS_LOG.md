@@ -4,6 +4,34 @@
 
 ### Summary
 
+Switched all three background/mural slots from the previous video/remote image sources to local PNG files in `image/`.
+
+### Affected Areas / Files
+
+- `app.js`
+- `index.html`
+- `README.md`
+- `docs/progress.md`
+- `docs/development/PROJECT_STATUS.md`
+- `docs/development/CODEX_PROGRESS_LOG.md`
+- `image/ChatGPT Image Apr 22, 2026, 10_29_11 PM.png`
+- `image/ChatGPT Image Apr 22, 2026, 10_48_57 PM.png`
+- `image/ChatGPT Image Apr 22, 2026, 11_03_19 PM.png`
+
+### Verification
+
+- `node --check app.js`: passing.
+- `git diff --check`: passing.
+- Browser image loading validation: still required.
+
+### Remaining Risk / Next Step
+
+The PNG files are local and reliable for deployment, but may need web optimization if page load time is too high.
+
+## 2026-04-26
+
+### Summary
+
 Researched heritage/immersive web atmosphere patterns and strengthened the dust implementation. The page now combines a subtle repeated dust texture with a small set of independently drifting foreground motes, making dust visible in the dark cave scene without adding per-frame JavaScript particle work.
 
 ### Research Notes

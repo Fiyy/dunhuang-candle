@@ -31,6 +31,7 @@ Canonical status and work logs now live in:
 - Added project documentation set: design, standards, and progress.
 - Added repository agent instructions and development status/log/testing documents.
 - Sanitized the local `origin` remote URL so it no longer contains an embedded token.
+- Switched the three background slots to local PNG files from `image/`.
 
 ## In Progress
 
@@ -43,7 +44,7 @@ Canonical status and work logs now live in:
 - Grip recognition may still be inconsistent across webcams, phones, and lighting conditions.
 - Distance-based zoom can drift because it estimates depth from hand landmark scale.
 - MediaPipe and model assets are loaded from external CDNs and Google-hosted model storage.
-- Remote mural images depend on Wikimedia availability.
+- Background image reliability now depends on committed local `image/` assets instead of Wikimedia availability.
 - The repository previously exposed a credential-bearing Git remote URL locally; verify credentials have been rotated and remote URL sanitized before sharing logs or environment details.
 
 ## Recommended Next Steps
@@ -51,7 +52,7 @@ Canonical status and work logs now live in:
 1. Test relaxed grip, victory gesture, and fallback touch mode on target mobile hardware.
 2. Tune grip curl thresholds, `CANDLE_HOLD_MIN_SCORE`, `ZOOM_DEADBAND`, and `ZOOM_SENSITIVITY` based on real testing.
 3. Consider adding an optional debug overlay for gesture name, score, zoom, and mode during calibration.
-4. Move remote mural dependencies to local optimized assets if reliability matters for exhibition use.
+4. Optimize local `image/` PNG assets for web delivery if load time becomes an issue.
 5. Add a short browser test checklist to the repository once target devices are known.
 6. Commit and push the current verified batch once ready.
 
