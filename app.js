@@ -2,7 +2,7 @@
  * Dunhuang Cave Mural Candle Explorer
  * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
-const APP_VERSION = 'v0.8.6';
+const APP_VERSION = 'v0.8.7';
 const MEDIAPIPE_VERSION = '0.10.34';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Pan state (for auto-pan at edges)
   let currentPanX = 0, currentPanY = 0;
 
-  const BASE_RADIUS = 130; // candle light radius in px
+  const BASE_RADIUS = 180; // candle light radius in px
   const MIN_ZOOM = 1.0;
   const MAX_ZOOM = 3.0;
   const AUTO_PAN_SPEED = 3; // pixels per inference frame
@@ -102,6 +102,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let touchZoomStartDistance = null;
   let touchZoomStartLevel = 1.0;
+  let lastCandleVisualActive = null;
+
+  function syncCandleVisualState() {
+    const candleVisualActive = candleActive && !lightsOn;
+    if (lastCandleVisualActive === candleVisualActive) return;
+    lastCandleVisualActive = candleVisualActive;
+    document.body.classList.toggle('candle-active', candleVisualActive);
+  }
 
   function withTimeout(promise, timeoutMs, label) {
     let timeoutId;
@@ -677,6 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (lightsOn) {
       // Lights on: clear overlay so mural is fully visible
       ctx.clearRect(0, 0, w, h);
+      syncCandleVisualState();
       requestAnimationFrame(render);
       return;
     }
@@ -689,6 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
     ctx.fillRect(0, 0, w, h);
+    syncCandleVisualState();
 
     if (candleActive) {
       // Smooth breathing glow — only affects light radius, NOT candle position
@@ -707,8 +717,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.globalCompositeOperation = 'destination-out';
       const gradient = ctx.createRadialGradient(candleX, flameY, 0, candleX, flameY, flickerRadius);
       gradient.addColorStop(0,    'rgba(0,0,0,1)');
-      gradient.addColorStop(0.45, 'rgba(0,0,0,0.95)');
-      gradient.addColorStop(0.75, 'rgba(0,0,0,0.6)');
+      gradient.addColorStop(0.55, 'rgba(0,0,0,1)');
+      gradient.addColorStop(0.78, 'rgba(0,0,0,0.78)');
       gradient.addColorStop(1,    'rgba(0,0,0,0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
@@ -717,8 +727,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // ── Warm amber tint ────────────────────────────────────────────
       ctx.globalCompositeOperation = 'source-over';
-      const warmGlow = ctx.createRadialGradient(candleX, flameY, 0, candleX, flameY, flickerRadius * 0.8);
-      warmGlow.addColorStop(0, 'rgba(255, 160, 40, 0.12)');
+      const warmGlow = ctx.createRadialGradient(candleX, flameY, 0, candleX, flameY, flickerRadius * 0.92);
+      warmGlow.addColorStop(0, 'rgba(255, 190, 78, 0.18)');
+      warmGlow.addColorStop(0.5, 'rgba(255, 160, 40, 0.08)');
       warmGlow.addColorStop(1, 'rgba(255, 160, 40, 0)');
       ctx.fillStyle = warmGlow;
       ctx.fillRect(0, 0, w, h);

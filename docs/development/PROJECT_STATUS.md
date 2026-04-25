@@ -29,12 +29,13 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Touch fallback supports one-finger candle movement and two-finger zoom.
 - Desktop fallback supports mouse drag and mouse wheel zoom.
 - Unlit state is intentionally dark; mural detail is primarily revealed by the candle or manual `Light On`.
+- Active candle state temporarily brightens the mural layer behind the dark overlay so the candle cutout remains readable.
 
 ## Validation Status
 
 - `node --check app.js`: passing as of 2026-04-26.
 - `git diff --check`: passing as of 2026-04-26.
-- Dark-state and enhanced dust implementation: code-level checks passing as of 2026-04-26.
+- Dark-state, enhanced dust, and candle-lit readability implementation: code-level checks passing as of 2026-04-26.
 - Real camera gesture testing: still required on target devices.
 - Mobile touch fallback testing: still required on target devices.
 - Browser visual tuning on target display/projector: still required.
@@ -46,7 +47,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Distance-based zoom is an approximation based on hand landmark scale, not true depth.
 - The app depends on external MediaPipe CDN/model hosting, but mural/background images are local.
 - No automated browser test suite exists yet.
-- Darkness and dust visibility are display-dependent and may need calibration for exhibition hardware.
+- Darkness, dust visibility, and candle-lit readability are display-dependent and may need calibration for exhibition hardware.
 - Git remote previously contained a credential-bearing URL in local config. The remote has been sanitized locally, but the exposed token should be considered compromised and rotated.
 
 ## Next Recommended Tasks

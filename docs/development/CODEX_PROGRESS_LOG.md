@@ -4,6 +4,29 @@
 
 ### Summary
 
+Improved candle-lit readability without brightening the fully unlit state. When the candle is actively held, the mural layer now enters a brighter `candle-active` visual state behind the dark overlay, and the candle cutout radius/core are stronger so details inside the flame area are clearer.
+
+### Affected Areas / Files
+
+- `app.js`
+- `style.css`
+- `docs/development/CODEX_PROGRESS_LOG.md`
+- `docs/development/PROJECT_STATUS.md`
+
+### Verification
+
+- `node --check app.js`: passing.
+- `git diff --check`: passing.
+- Browser visual validation: still required on target display/projector.
+
+### Remaining Risk / Next Step
+
+If the lit area is too broad on the exhibition display, tune `BASE_RADIUS` and `body.candle-active #mural-container` brightness together rather than raising global light.
+
+## 2026-04-26
+
+### Summary
+
 Switched all three background/mural slots from the previous video/remote image sources to local PNG files in `image/`.
 
 ### Affected Areas / Files
