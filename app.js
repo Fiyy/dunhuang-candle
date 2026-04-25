@@ -2,7 +2,8 @@
  * Dunhuang Cave Mural Candle Explorer
  * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
-const APP_VERSION = 'v0.7.0';
+const APP_VERSION = 'v0.8.2';
+const MEDIAPIPE_VERSION = '0.10.34';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -25,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let touchMode = false;
   let firstResult = true; // flag to hide loading screen on first MediaPipe result
   let zoomLevel = 1.0; // zoom level for mural (1.0 = 100%, 3.0 = 300%)
+  let smoothedCandleX = null, smoothedCandleY = null;
 
   // Distance-based zoom state
   let zoomBaseline = null;
@@ -36,8 +38,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const BASE_RADIUS = 130; // candle light radius in px
   const MIN_ZOOM = 1.0;
   const MAX_ZOOM = 3.0;
-  const AUTO_PAN_SPEED = 2; // pixels per frame
-  const EDGE_THRESHOLD = 50; // pixels from edge to trigger auto-pan
+  const AUTO_PAN_SPEED = 3; // pixels per inference frame
+  const EDGE_THRESHOLD = 55; // pixels from edge to trigger auto-pan
+  const INFERENCE_INTERVAL_MS = 55; // ~18fps keeps UI smooth on phones
+  const MODEL_LOAD_TIMEOUT_MS = 10000;
+  const CAMERA_START_TIMEOUT_MS = 12000;
+  const STARTUP_FALLBACK_MS = 14000;
+  const HAND_MISSING_GRACE_MS = 180;
+  const POSITION_SMOOTH_FACTOR = 0.28;
+  const ZOOM_DEADBAND = 0.08;
+  const ZOOM_SENSITIVITY = 1.25;
+  const ZOOM_CHANGE_EPSILON = 0.012;
+  const DISCRETE_GESTURE_MIN_SCORE = 0.65;
+  const DISCRETE_GESTURE_STABLE_FRAMES = 4;
+  const DISCRETE_GESTURE_RELEASE_MS = 450;
+  const DISCRETE_GESTURES = new Set(['Victory']);
+  const CANDLE_HOLD_GESTURE = 'Closed_Fist';
+  const CANDLE_HOLD_MIN_SCORE = 0.55;
 
   // The candle graphic sits BELOW the light circle.
   // candleX/Y = center of the light halo (= where the flame is)
@@ -61,52 +78,150 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   let gestureRecognizer;
   let lastVideoTime = -1;
-  let lastGestureTime = {};
-  const GESTURE_COOLDOWN = 1000; // 1 second cooldown for discrete gestures
+  let lastInferenceTime = 0;
+  let consecutiveInferenceErrors = 0;
+  let fallbackEnabled = false;
+  let detectionStarted = false;
+  let cameraInitStarted = false;
+  let startupFallbackTimer = null;
+  let activeCameraStream = null;
+  let lastHandSeenAt = 0;
+
+  let pendingDiscreteGesture = null;
+  let pendingDiscreteFrames = 0;
+  let heldDiscreteGesture = null;
+  let lastDiscreteGestureSeenAt = 0;
+
+  let touchZoomStartDistance = null;
+  let touchZoomStartLevel = 1.0;
+
+  function withTimeout(promise, timeoutMs, label) {
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
+    });
+
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
+  }
 
   async function initGestureRecognizer() {
     const { GestureRecognizer, FilesetResolver } = await import(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest"
+      `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}`
     );
 
     const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`
     );
 
-    gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath:
-          "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
-        delegate: "GPU"
-      },
-      runningMode: "VIDEO",
-      numHands: 1
-    });
-  }
-
-  function isGestureCooledDown(gestureName) {
-    const now = Date.now();
-    if (lastGestureTime[gestureName] && now - lastGestureTime[gestureName] < GESTURE_COOLDOWN) {
-      return false;
+    async function createRecognizer(delegate) {
+      return GestureRecognizer.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath:
+            "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+          delegate
+        },
+        runningMode: "VIDEO",
+        numHands: 1,
+        minHandDetectionConfidence: 0.55,
+        minHandPresenceConfidence: 0.55,
+        minTrackingConfidence: 0.55
+      });
     }
-    lastGestureTime[gestureName] = now;
-    return true;
+
+    try {
+      gestureRecognizer = await createRecognizer("GPU");
+    } catch (gpuError) {
+      console.warn('GPU gesture delegate unavailable, retrying with CPU:', gpuError);
+      gestureRecognizer = await createRecognizer("CPU");
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Hand distance calculation (proxy for depth/zoom)
   // ---------------------------------------------------------------------------
   function calculateHandSize(landmarks) {
-    // Use wrist-to-middle-finger-MCP distance as a proxy for hand size in frame
-    // Closer hand = larger in frame = bigger distance
+    // Blend palm length and palm width so zoom is less affected by finger pose.
     const wrist = landmarks[0];
+    const indexMcp = landmarks[5];
     const middleMcp = landmarks[9];
-    return Math.hypot(wrist.x - middleMcp.x, wrist.y - middleMcp.y);
+    const pinkyMcp = landmarks[17];
+    const palmLength = Math.hypot(wrist.x - middleMcp.x, wrist.y - middleMcp.y);
+    const palmWidth = Math.hypot(indexMcp.x - pinkyMcp.x, indexMcp.y - pinkyMcp.y);
+    return Math.max(0.0001, palmLength * 0.65 + palmWidth * 0.35);
   }
 
   // Smoothed hand size (exponential moving average to reduce jitter)
   let smoothedHandSize = null;
   const SMOOTH_FACTOR = 0.15;
+
+  function resetHandTrackingState(clearHeldGesture = false) {
+    candleActive = false;
+    zoomBaseline = null;
+    smoothedHandSize = null;
+    smoothedCandleX = null;
+    smoothedCandleY = null;
+    pendingDiscreteGesture = null;
+    pendingDiscreteFrames = 0;
+    if (clearHeldGesture) {
+      heldDiscreteGesture = null;
+      lastDiscreteGestureSeenAt = 0;
+    }
+  }
+
+  function setLightsOn(nextLightsOn) {
+    lightsOn = nextLightsOn;
+    document.body.classList.toggle('lights-on', lightsOn);
+    const label = document.querySelector('#light-btn .label');
+    if (label) label.textContent = lightsOn ? 'Light Off' : 'Light On';
+  }
+
+  function updateCandlePosition(rawX, rawY) {
+    const clampedX = Math.max(0, Math.min(overlayCanvas.width, rawX));
+    const clampedY = Math.max(0, Math.min(overlayCanvas.height, rawY));
+
+    if (smoothedCandleX === null || smoothedCandleY === null) {
+      smoothedCandleX = clampedX;
+      smoothedCandleY = clampedY;
+    } else {
+      smoothedCandleX += (clampedX - smoothedCandleX) * POSITION_SMOOTH_FACTOR;
+      smoothedCandleY += (clampedY - smoothedCandleY) * POSITION_SMOOTH_FACTOR;
+    }
+
+    candleX = smoothedCandleX;
+    candleY = smoothedCandleY;
+  }
+
+  function getDiscreteGestureTrigger(gesture) {
+    const now = Date.now();
+    const gestureName = gesture?.categoryName;
+    const score = gesture?.score ?? 0;
+    const isValidDiscreteGesture = DISCRETE_GESTURES.has(gestureName) && score >= DISCRETE_GESTURE_MIN_SCORE;
+
+    if (!isValidDiscreteGesture) {
+      pendingDiscreteGesture = null;
+      pendingDiscreteFrames = 0;
+      if (heldDiscreteGesture && now - lastDiscreteGestureSeenAt > DISCRETE_GESTURE_RELEASE_MS) {
+        heldDiscreteGesture = null;
+      }
+      return null;
+    }
+
+    lastDiscreteGestureSeenAt = now;
+
+    if (pendingDiscreteGesture === gestureName) {
+      pendingDiscreteFrames += 1;
+    } else {
+      pendingDiscreteGesture = gestureName;
+      pendingDiscreteFrames = 1;
+    }
+
+    if (pendingDiscreteFrames < DISCRETE_GESTURE_STABLE_FRAMES || heldDiscreteGesture === gestureName) {
+      return null;
+    }
+
+    heldDiscreteGesture = gestureName;
+    return gestureName;
+  }
 
   // ---------------------------------------------------------------------------
   // Auto-pan when hand is at screen edge (only when zoomed)
@@ -114,11 +229,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function autoPanIfAtEdge(handX, handY) {
     let vx = 0, vy = 0;
 
-    if (handX < EDGE_THRESHOLD) vx = AUTO_PAN_SPEED;
-    else if (handX > overlayCanvas.width - EDGE_THRESHOLD) vx = -AUTO_PAN_SPEED;
+    if (handX < EDGE_THRESHOLD) vx = AUTO_PAN_SPEED * ((EDGE_THRESHOLD - handX) / EDGE_THRESHOLD);
+    else if (handX > overlayCanvas.width - EDGE_THRESHOLD) {
+      vx = -AUTO_PAN_SPEED * ((handX - (overlayCanvas.width - EDGE_THRESHOLD)) / EDGE_THRESHOLD);
+    }
 
-    if (handY < EDGE_THRESHOLD) vy = AUTO_PAN_SPEED;
-    else if (handY > overlayCanvas.height - EDGE_THRESHOLD) vy = -AUTO_PAN_SPEED;
+    if (handY < EDGE_THRESHOLD) vy = AUTO_PAN_SPEED * ((EDGE_THRESHOLD - handY) / EDGE_THRESHOLD);
+    else if (handY > overlayCanvas.height - EDGE_THRESHOLD) {
+      vy = -AUTO_PAN_SPEED * ((handY - (overlayCanvas.height - EDGE_THRESHOLD)) / EDGE_THRESHOLD);
+    }
 
     if (vx !== 0 || vy !== 0) {
       currentPanX += vx;
@@ -137,44 +256,50 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('loading-screen').classList.add('fade-out');
     }
 
-    if (!result.gestures || result.gestures.length === 0) {
+    const landmarks = result.landmarks?.[0];
+    const gesture = result.gestures?.[0]?.[0] ?? null;
+
+    if (!landmarks) {
+      if (Date.now() - lastHandSeenAt > HAND_MISSING_GRACE_MS) {
+        resetHandTrackingState(true);
+      }
+      return;
+    }
+
+    lastHandSeenAt = Date.now();
+    const triggeredGesture = getDiscreteGestureTrigger(gesture);
+
+    // Victory = Switch mural after multiple stable frames.
+    if (triggeredGesture === "Victory") {
+      switchMural((currentMural + 1) % MURALS.length);
+      resetHandTrackingState();
+      return;
+    }
+
+    // While a discrete gesture is being confirmed, suppress candle movement to avoid visual flicker.
+    if (DISCRETE_GESTURES.has(gesture?.categoryName) && (gesture?.score ?? 0) >= DISCRETE_GESTURE_MIN_SCORE) {
       candleActive = false;
       zoomBaseline = null;
       smoothedHandSize = null;
       return;
     }
 
-    const gesture = result.gestures[0][0];
-    const landmarks = result.landmarks[0];
+    const isHoldingCandle =
+      gesture?.categoryName === CANDLE_HOLD_GESTURE &&
+      (gesture?.score ?? 0) >= CANDLE_HOLD_MIN_SCORE;
 
-    // Open Palm = Toggle lights (discrete action with cooldown)
-    if (gesture.categoryName === "Open_Palm") {
-      if (isGestureCooledDown("Open_Palm")) {
-        lightsOn = !lightsOn;
-        document.body.classList.toggle('lights-on', lightsOn);
-        const label = document.querySelector('#light-btn .label');
-        if (label) label.textContent = lightsOn ? 'Light Off' : 'Light On';
-      }
+    if (!isHoldingCandle) {
       candleActive = false;
       zoomBaseline = null;
       smoothedHandSize = null;
+      smoothedCandleX = null;
+      smoothedCandleY = null;
       return;
     }
 
-    // Victory = Switch mural
-    if (gesture.categoryName === "Victory") {
-      if (isGestureCooledDown("Victory")) {
-        switchMural((currentMural + 1) % MURALS.length);
-      }
-      zoomBaseline = null;
-      smoothedHandSize = null;
-      return;
-    }
-
-    // Any other hand position = Light candle + move + zoom
+    // Closed fist = holding the candle: light it, move it, and control zoom.
     const palm = landmarks[9];
-    candleX = (1 - palm.x) * overlayCanvas.width;
-    candleY = palm.y * overlayCanvas.height;
+    updateCandlePosition((1 - palm.x) * overlayCanvas.width, palm.y * overlayCanvas.height);
     candleActive = true;
 
     const hint = document.getElementById('hint');
@@ -193,8 +318,14 @@ document.addEventListener('DOMContentLoaded', () => {
       zoomBaselineLevel = zoomLevel;
     }
 
-    const zoomFactor = smoothedHandSize / zoomBaseline;
-    applyZoom(zoomBaselineLevel * zoomFactor);
+    const zoomDelta = (smoothedHandSize / zoomBaseline) - 1;
+    if (Math.abs(zoomDelta) < ZOOM_DEADBAND) {
+      zoomBaseline = zoomBaseline * 0.98 + smoothedHandSize * 0.02;
+      zoomBaselineLevel = zoomLevel;
+    } else {
+      const effectiveDelta = Math.sign(zoomDelta) * (Math.abs(zoomDelta) - ZOOM_DEADBAND);
+      applyZoom(zoomBaselineLevel * (1 + effectiveDelta * ZOOM_SENSITIVITY));
+    }
 
     // Auto-pan when hand at screen edge and zoomed
     if (zoomLevel > 1.0) {
@@ -206,26 +337,69 @@ document.addEventListener('DOMContentLoaded', () => {
   // Camera init — falls back to touch mode on failure
   // ---------------------------------------------------------------------------
   async function initCamera() {
+    if (cameraInitStarted) return;
+    cameraInitStarted = true;
+
     try {
-      await initGestureRecognizer();
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera API unavailable');
+      }
 
       const video = document.getElementById('camera-video');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: 'user' }
-      });
+
+      const [stream] = await Promise.all([
+        withTimeout(navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 30, max: 30 },
+            facingMode: 'user'
+          }
+        }), CAMERA_START_TIMEOUT_MS, 'Camera start'),
+        withTimeout(initGestureRecognizer(), MODEL_LOAD_TIMEOUT_MS, 'Gesture model load')
+      ]);
+
+      if (fallbackEnabled) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      activeCameraStream = stream;
       video.srcObject = stream;
       await video.play();
+      detectionStarted = true;
+
+      document.getElementById('mode-badge').classList.remove('hidden');
+      document.getElementById('mode-text').textContent = 'Hand Mode';
+      setTimeout(() => {
+        if (!touchMode) document.getElementById('mode-badge').classList.add('hidden');
+      }, 1800);
 
       // Process frames
-      function processFrame() {
-        if (video.currentTime !== lastVideoTime) {
+      function processFrame(now) {
+        if (fallbackEnabled) return;
+
+        if (
+          video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+          video.currentTime !== lastVideoTime &&
+          now - lastInferenceTime >= INFERENCE_INTERVAL_MS
+        ) {
           lastVideoTime = video.currentTime;
-          const result = gestureRecognizer.recognizeForVideo(video, Date.now());
-          onGestureResults(result);
+          lastInferenceTime = now;
+
+          try {
+            const result = gestureRecognizer.recognizeForVideo(video, performance.now());
+            consecutiveInferenceErrors = 0;
+            onGestureResults(result);
+          } catch (inferenceError) {
+            consecutiveInferenceErrors += 1;
+            console.warn('Gesture inference failed:', inferenceError);
+            if (consecutiveInferenceErrors >= 10) enableTouchMode();
+          }
         }
         requestAnimationFrame(processFrame);
       }
-      processFrame();
+      requestAnimationFrame(processFrame);
 
     } catch (e) {
       console.warn('Camera unavailable, switching to touch mode:', e);
@@ -237,13 +411,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // Touch / mouse fallback
   // ---------------------------------------------------------------------------
   function enableTouchMode() {
+    if (fallbackEnabled) return;
+    fallbackEnabled = true;
     touchMode = true;
+    resetHandTrackingState(true);
+    clearTimeout(startupFallbackTimer);
+
+    if (activeCameraStream) {
+      activeCameraStream.getTracks().forEach((track) => track.stop());
+      activeCameraStream = null;
+    }
 
     // Show mode badge and update hint for touch mode
     document.getElementById('mode-badge').classList.remove('hidden');
     document.getElementById('mode-text').textContent = 'Touch Mode';
     const hint = document.getElementById('hint');
-    if (hint) hint.querySelector('p').textContent = 'Touch and drag to light the candle';
+    if (hint) {
+      hint.querySelector('p').textContent = 'Touch and drag to light the candle';
+      const hintSub = hint.querySelector('.hint-sub');
+      if (hintSub) hintSub.textContent = 'Two fingers = zoom · Button = lights · Dots = murals';
+    }
 
     // Hide loading screen immediately
     document.getElementById('loading-screen').classList.add('fade-out');
@@ -253,27 +440,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     overlayCanvas.addEventListener('touchstart', handleTouch, { passive: false });
     overlayCanvas.addEventListener('touchmove', handleTouch, { passive: false });
-    overlayCanvas.addEventListener('touchend', () => { candleActive = false; });
+    overlayCanvas.addEventListener('touchend', () => {
+      candleActive = false;
+      touchZoomStartDistance = null;
+    });
+    overlayCanvas.addEventListener('touchcancel', () => {
+      candleActive = false;
+      touchZoomStartDistance = null;
+    });
 
     // Mouse support for desktop testing
     overlayCanvas.addEventListener('mousedown', (e) => { candleActive = true; handleMouse(e); });
     overlayCanvas.addEventListener('mousemove', (e) => { if (candleActive) handleMouse(e); });
     overlayCanvas.addEventListener('mouseup', () => { candleActive = false; });
+    overlayCanvas.addEventListener('mouseleave', () => { candleActive = false; });
+    overlayCanvas.addEventListener('wheel', handleWheel, { passive: false });
   }
 
   function handleTouch(e) {
     e.preventDefault();
+
+    if (e.touches.length >= 2) {
+      const first = e.touches[0];
+      const second = e.touches[1];
+      const midpointX = (first.clientX + second.clientX) / 2;
+      const midpointY = (first.clientY + second.clientY) / 2;
+      const distance = Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+
+      updateCandlePosition(midpointX, midpointY);
+      candleActive = true;
+
+      if (touchZoomStartDistance === null) {
+        touchZoomStartDistance = distance;
+        touchZoomStartLevel = zoomLevel;
+      } else if (touchZoomStartDistance > 0) {
+        applyZoom(touchZoomStartLevel * (distance / touchZoomStartDistance));
+      }
+      return;
+    }
+
+    touchZoomStartDistance = null;
     const touch = e.touches[0];
     if (touch) {
-      candleX = touch.clientX;
-      candleY = touch.clientY;
+      updateCandlePosition(touch.clientX, touch.clientY);
       candleActive = true;
     }
   }
 
   function handleMouse(e) {
-    candleX = e.clientX;
-    candleY = e.clientY;
+    updateCandlePosition(e.clientX, e.clientY);
+  }
+
+  function handleWheel(e) {
+    e.preventDefault();
+    const direction = e.deltaY > 0 ? -1 : 1;
+    applyZoom(zoomLevel + direction * 0.08);
   }
 
   // ---------------------------------------------------------------------------
@@ -422,8 +643,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------------------------
   // Zoom and pan control
   // ---------------------------------------------------------------------------
-  function applyZoom(newZoom) {
-    zoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+  function applyZoom(newZoom, showIndicator = true) {
+    const nextZoomLevel = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+    const didChange = Math.abs(nextZoomLevel - zoomLevel) >= ZOOM_CHANGE_EPSILON;
+    zoomLevel = nextZoomLevel;
 
     // Reset pan when zooming back to 100%
     if (zoomLevel <= 1.0) {
@@ -432,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     applyTransform();
-    showZoomIndicator();
+    if (showIndicator && didChange) showZoomIndicator();
   }
 
   function applyPan(x, y) {
@@ -470,10 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Light toggle
   // ---------------------------------------------------------------------------
   document.getElementById('light-btn').addEventListener('click', () => {
-    lightsOn = !lightsOn;
-    document.body.classList.toggle('lights-on', lightsOn);
-    const label = document.querySelector('#light-btn .label');
-    label.textContent = lightsOn ? 'Light Off' : 'Light On';
+    setLightsOn(!lightsOn);
   });
 
   // ---------------------------------------------------------------------------
@@ -543,15 +763,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   render();
 
-  // Safety timeout: hide loading screen after 5s even if MediaPipe fails
-  setTimeout(() => {
-    const loadingScreen = document.getElementById('loading-screen');
-    if (loadingScreen && !loadingScreen.classList.contains('fade-out')) {
-      loadingScreen.classList.add('fade-out');
-      console.warn('Loading screen timeout — MediaPipe may have failed to load');
-    }
-  }, 5000);
+  function startExperience() {
+    const loadingContent = document.querySelector('.loading-content');
+    const loadingHint = document.querySelector('.loading-hint');
+    if (loadingContent) loadingContent.classList.add('is-loading');
+    if (loadingHint) loadingHint.textContent = 'Loading hand detection model...';
 
-  initCamera();
+    // Safety timeout: switch to touch mode if startup hangs before the first result.
+    clearTimeout(startupFallbackTimer);
+    startupFallbackTimer = setTimeout(() => {
+      if (!detectionStarted && !fallbackEnabled) {
+        console.warn('Gesture startup timeout — switching to touch mode');
+        enableTouchMode();
+      }
+    }, STARTUP_FALLBACK_MS);
+
+    initCamera();
+  }
+
+  const startBtn = document.getElementById('start-btn');
+  if (startBtn) {
+    startBtn.addEventListener('click', startExperience);
+  } else {
+    startExperience();
+  }
 
 }); // end DOMContentLoaded

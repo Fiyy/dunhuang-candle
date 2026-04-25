@@ -24,7 +24,9 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: #1a1208;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(125, 82, 22, 0.28), transparent 42%),
+    linear-gradient(160deg, #241506 0%, #120b05 55%, #050403 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,8 +43,9 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  padding: 40px;
+  gap: 18px;
+  width: min(92vw, 520px);
+  padding: 40px 28px;
   text-align: center;
 }
 
@@ -64,6 +67,74 @@ html, body {
   letter-spacing: 0.06em;
 }
 
+.gesture-guide {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.gesture-card {
+  min-height: 96px;
+  padding: 16px 12px;
+  border: 1px solid rgba(201, 168, 76, 0.28);
+  border-radius: 16px;
+  background: rgba(10, 7, 2, 0.5);
+  box-shadow: inset 0 0 20px rgba(201, 168, 76, 0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.gesture-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.76rem;
+  color: #e2c46d;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gesture-desc,
+.manual-light-note {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.9rem;
+  color: rgba(231, 203, 128, 0.68);
+  line-height: 1.25;
+}
+
+.manual-light-note {
+  margin-top: 2px;
+  font-style: italic;
+}
+
+#start-btn {
+  margin-top: 4px;
+  padding: 11px 24px;
+  border: 1px solid rgba(226, 196, 109, 0.7);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(201, 168, 76, 0.22), rgba(94, 55, 12, 0.65));
+  color: #f0d080;
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(201, 168, 76, 0.14);
+  transition: transform 0.18s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+#start-btn:hover {
+  border-color: rgba(240, 208, 128, 0.95);
+  box-shadow: 0 0 32px rgba(201, 168, 76, 0.24);
+  transform: translateY(-1px);
+}
+
+#start-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
 .loading-bar {
   width: clamp(180px, 50vw, 320px);
   height: 3px;
@@ -71,6 +142,17 @@ html, body {
   border-radius: 2px;
   overflow: hidden;
   position: relative;
+  display: none;
+}
+
+.loading-content.is-loading .gesture-guide,
+.loading-content.is-loading .manual-light-note,
+.loading-content.is-loading #start-btn {
+  display: none;
+}
+
+.loading-content.is-loading .loading-bar {
+  display: block;
 }
 
 .loading-fill {
@@ -85,6 +167,17 @@ html, body {
 @keyframes shimmer {
   0%   { background-position: 200% center; }
   100% { background-position: -200% center; }
+}
+
+@media (max-width: 640px) {
+  .gesture-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .gesture-card {
+    min-height: auto;
+    padding: 13px 14px;
+  }
 }
 
 /* ─── Mural Image ────────────────────────────────────────────── */

@@ -13,7 +13,23 @@
   <div id="loading-screen">
     <div class="loading-content">
       <h1>Dunhuang Caves</h1>
-      <p class="loading-hint">Loading hand detection model...</p>
+      <p class="loading-hint">Explore the murals by candlelight.</p>
+      <div class="gesture-guide">
+        <div class="gesture-card">
+          <span class="gesture-name">Hold Fist</span>
+          <span class="gesture-desc">Grip the candle to light it</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-name">Near / Far</span>
+          <span class="gesture-desc">Zoom into mural details</span>
+        </div>
+        <div class="gesture-card">
+          <span class="gesture-name">Hold Victory</span>
+          <span class="gesture-desc">Switch to the next mural</span>
+        </div>
+      </div>
+      <p class="manual-light-note">Light On / Off is controlled only by the button.</p>
+      <button id="start-btn" type="button">Start Exploring</button>
       <div class="loading-bar"><div class="loading-fill"></div></div>
     </div>
   </div>
@@ -61,8 +77,8 @@
 
     <!-- Ambient hint (hidden after first gesture) -->
     <div id="hint">
-      <p>Move your hand to light the candle</p>
-      <p class="hint-sub">Open palm ✋ = lights · Move closer/farther = zoom · Victory ✌️ = next</p>
+      <p>Make a fist to hold and light the candle</p>
+      <p class="hint-sub">Release hand = candle off · Move closer/farther = zoom · Hold victory = next</p>
     </div>
   </div>
 
