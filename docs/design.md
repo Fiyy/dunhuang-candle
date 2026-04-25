@@ -25,9 +25,9 @@ Create an atmospheric browser-based Dunhuang mural experience where users explor
 
 ## Gesture Vocabulary
 
-- `Closed_Fist`: hold and light the candle.
-- Hand position while holding fist: move the candle.
-- Hand distance while holding fist: zoom in and out.
+- Relaxed grip / `Closed_Fist`: hold and light the candle.
+- Hand position while holding the grip: move the candle.
+- Hand distance while holding the grip: zoom in and out.
 - Edge position while zoomed: auto-pan the mural.
 - `Victory`: switch to the next mural.
 
@@ -52,11 +52,11 @@ Create an atmospheric browser-based Dunhuang mural experience where users explor
 - MediaPipe version is pinned instead of using `latest` to reduce deployment drift.
 - Discrete gestures require stable frames and confidence thresholds to reduce false triggers.
 - `Open_Palm` is not mapped to lighting because lighting must be a manual UI decision.
-- Candle activation requires `Closed_Fist`, matching the metaphor of gripping a candle.
+- Candle activation uses a hybrid grip signal: MediaPipe `Closed_Fist` classification can activate it, but curled-finger landmark geometry can also activate it. This better matches a natural candle-holding pose.
 
 ## Known UX Risks
 
-- `Closed_Fist` recognition may vary by camera angle, hand size, lighting, and device.
+- Grip recognition may vary by camera angle, hand size, lighting, and device, but it no longer depends only on the pre-trained `Closed_Fist` label.
 - Distance-based zoom is an approximation based on visible palm geometry, not real depth.
 - Victory gesture may be confused with similar hand poses on low-quality cameras.
-- Users may need a short calibration period to understand fist distance zoom.
+- Users may need a short calibration period to understand grip distance zoom.

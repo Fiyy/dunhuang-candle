@@ -5,9 +5,9 @@ An interactive Dunhuang mural explorer. The page uses a candle-light reveal effe
 ## Current Interaction
 
 - Start page explains the available controls before requesting camera access.
-- Closed fist holds and lights the candle.
-- Moving the fist moves the candle.
-- Moving the fist closer or farther controls mural zoom.
+- Relaxed finger curl / closed fist holds and lights the candle.
+- Moving the held grip moves the candle.
+- Moving the held grip closer or farther controls mural zoom.
 - Holding a victory gesture switches to the next mural.
 - Light On / Off is controlled only by the on-screen button.
 - If camera or model loading fails, the app falls back to touch mode.

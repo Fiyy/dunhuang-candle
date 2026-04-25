@@ -2,7 +2,7 @@
  * Dunhuang Cave Mural Candle Explorer
  * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
-const APP_VERSION = 'v0.8.3';
+const APP_VERSION = 'v0.8.4';
 const MEDIAPIPE_VERSION = '0.10.34';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -55,6 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const DISCRETE_GESTURES = new Set(['Victory']);
   const CANDLE_HOLD_GESTURE = 'Closed_Fist';
   const CANDLE_HOLD_MIN_SCORE = 0.55;
+  const FIST_MODEL_ASSIST_MIN_SCORE = 0.42;
+  const FINGER_CURL_MIN_SCORE = 0.48;
+  const FIST_CURL_MIN_AVERAGE = 0.54;
+  const FIST_MIN_CURLED_FINGERS = 3;
+  const FIST_HOLD_STABLE_FRAMES = 2;
+  const FIST_RELEASE_GRACE_FRAMES = 3;
 
   // The candle graphic sits BELOW the light circle.
   // candleX/Y = center of the light halo (= where the flame is)
@@ -91,6 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let pendingDiscreteFrames = 0;
   let heldDiscreteGesture = null;
   let lastDiscreteGestureSeenAt = 0;
+  let fistHoldFrames = 0;
+  let fistReleaseFrames = 0;
 
   let touchZoomStartDistance = null;
   let touchZoomStartLevel = 1.0;
@@ -122,9 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         runningMode: "VIDEO",
         numHands: 1,
-        minHandDetectionConfidence: 0.55,
-        minHandPresenceConfidence: 0.55,
-        minTrackingConfidence: 0.55
+        minHandDetectionConfidence: 0.45,
+        minHandPresenceConfidence: 0.45,
+        minTrackingConfidence: 0.45
       });
     }
 
@@ -150,6 +158,87 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.max(0.0001, palmLength * 0.65 + palmWidth * 0.35);
   }
 
+  function distance(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function clamp01(value) {
+    return Math.max(0, Math.min(1, value));
+  }
+
+  function angleBetween(a, b, c) {
+    const abx = a.x - b.x;
+    const aby = a.y - b.y;
+    const cbx = c.x - b.x;
+    const cby = c.y - b.y;
+    const dot = abx * cbx + aby * cby;
+    const abLength = Math.hypot(abx, aby);
+    const cbLength = Math.hypot(cbx, cby);
+    if (abLength === 0 || cbLength === 0) return 180;
+    const cosine = Math.max(-1, Math.min(1, dot / (abLength * cbLength)));
+    return Math.acos(cosine) * 180 / Math.PI;
+  }
+
+  function getFingerCurlScore(landmarks, finger) {
+    const wrist = landmarks[0];
+    const palmCenter = landmarks[9];
+    const palmSize = calculateHandSize(landmarks);
+    const mcp = landmarks[finger.mcp];
+    const pip = landmarks[finger.pip];
+    const tip = landmarks[finger.tip];
+
+    const pipAngle = angleBetween(mcp, pip, tip);
+    const angleCurl = clamp01((166 - pipAngle) / 58);
+    const tipNearPalm = 1 - clamp01((distance(tip, palmCenter) / palmSize - 0.42) / 0.82);
+    const tipNotExtended = 1 - clamp01((distance(tip, wrist) / Math.max(0.0001, distance(mcp, wrist)) - 1.22) / 0.78);
+
+    return clamp01(angleCurl * 0.48 + tipNearPalm * 0.34 + tipNotExtended * 0.18);
+  }
+
+  function getFistLandmarkSignal(landmarks) {
+    const fingers = [
+      { name: 'index', mcp: 5, pip: 6, tip: 8 },
+      { name: 'middle', mcp: 9, pip: 10, tip: 12 },
+      { name: 'ring', mcp: 13, pip: 14, tip: 16 },
+      { name: 'pinky', mcp: 17, pip: 18, tip: 20 },
+    ];
+    const curlScores = fingers.map((finger) => getFingerCurlScore(landmarks, finger));
+    const curledCount = curlScores.filter((score) => score >= FINGER_CURL_MIN_SCORE).length;
+    const averageCurl = curlScores.reduce((sum, score) => sum + score, 0) / curlScores.length;
+
+    return {
+      isFistLike: curledCount >= FIST_MIN_CURLED_FINGERS && averageCurl >= FIST_CURL_MIN_AVERAGE,
+      curledCount,
+      averageCurl,
+    };
+  }
+
+  function getCandleHoldSignal(gesture, landmarks) {
+    const gestureName = gesture?.categoryName;
+    const gestureScore = gesture?.score ?? 0;
+    const modelStrong = gestureName === CANDLE_HOLD_GESTURE && gestureScore >= CANDLE_HOLD_MIN_SCORE;
+    const modelAssist = gestureName === CANDLE_HOLD_GESTURE && gestureScore >= FIST_MODEL_ASSIST_MIN_SCORE;
+    const landmarkSignal = getFistLandmarkSignal(landmarks);
+    const rawHold = modelStrong || (landmarkSignal.isFistLike && gestureName !== 'Open_Palm') || (modelAssist && landmarkSignal.curledCount >= 2);
+
+    if (rawHold) {
+      fistHoldFrames += 1;
+      fistReleaseFrames = 0;
+    } else {
+      fistReleaseFrames += 1;
+      if (fistReleaseFrames > FIST_RELEASE_GRACE_FRAMES) {
+        fistHoldFrames = 0;
+      }
+    }
+
+    return {
+      isHolding: fistHoldFrames >= FIST_HOLD_STABLE_FRAMES && fistReleaseFrames <= FIST_RELEASE_GRACE_FRAMES,
+      gestureName,
+      gestureScore,
+      ...landmarkSignal,
+    };
+  }
+
   // Smoothed hand size (exponential moving average to reduce jitter)
   let smoothedHandSize = null;
   const SMOOTH_FACTOR = 0.15;
@@ -162,6 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
     smoothedCandleY = null;
     pendingDiscreteGesture = null;
     pendingDiscreteFrames = 0;
+    fistReleaseFrames = 0;
+    fistHoldFrames = 0;
     if (clearHeldGesture) {
       heldDiscreteGesture = null;
       lastDiscreteGestureSeenAt = 0;
@@ -284,9 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const isHoldingCandle =
-      gesture?.categoryName === CANDLE_HOLD_GESTURE &&
-      (gesture?.score ?? 0) >= CANDLE_HOLD_MIN_SCORE;
+    const holdSignal = getCandleHoldSignal(gesture, landmarks);
+    const isHoldingCandle = holdSignal.isHolding;
 
     if (!isHoldingCandle) {
       candleActive = false;
@@ -297,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Closed fist = holding the candle: light it, move it, and control zoom.
+    // Relaxed grip / closed fist = hold the candle, move it, and control zoom.
     const palm = landmarks[9];
     updateCandlePosition((1 - palm.x) * overlayCanvas.width, palm.y * overlayCanvas.height);
     candleActive = true;

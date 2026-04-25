@@ -4,7 +4,7 @@ Last updated: 2026-04-26
 
 ## Current Status
 
-The project is a static GitHub Pages app with a gesture-driven candle exploration experience. The latest local work focuses on hand gesture stability, explicit manual lighting control, a first-run gesture guide, and a candle-holding metaphor using closed fist detection.
+The project is a static GitHub Pages app with a gesture-driven candle exploration experience. The latest local work focuses on hand gesture stability, explicit manual lighting control, a first-run gesture guide, and a candle-holding metaphor using hybrid grip detection.
 
 Canonical status and work logs now live in:
 
@@ -27,7 +27,7 @@ Canonical status and work logs now live in:
 - Added gesture stability logic for discrete gestures.
 - Removed gesture control for global light mode.
 - Added start guide before camera permission is requested.
-- Changed candle activation so only `Closed_Fist` lights and controls the candle.
+- Changed candle activation so a relaxed curled-finger grip or `Closed_Fist` lights and controls the candle.
 - Added project documentation set: design, standards, and progress.
 - Added repository agent instructions and development status/log/testing documents.
 - Sanitized the local `origin` remote URL so it no longer contains an embedded token.
@@ -35,12 +35,12 @@ Canonical status and work logs now live in:
 ## In Progress
 
 - Gesture tuning for real devices.
-- Refinement of closed-fist threshold and zoom sensitivity.
+- Refinement of grip curl thresholds and zoom sensitivity.
 - Documentation maintenance as behavior stabilizes.
 
 ## Open Risks
 
-- Closed-fist detection may be inconsistent across webcams, phones, and lighting conditions.
+- Grip recognition may still be inconsistent across webcams, phones, and lighting conditions.
 - Distance-based zoom can drift because it estimates depth from hand landmark scale.
 - MediaPipe and model assets are loaded from external CDNs and Google-hosted model storage.
 - Remote mural images depend on Wikimedia availability.
@@ -48,8 +48,8 @@ Canonical status and work logs now live in:
 
 ## Recommended Next Steps
 
-1. Test closed fist, victory gesture, and fallback touch mode on target mobile hardware.
-2. Tune `CANDLE_HOLD_MIN_SCORE`, `ZOOM_DEADBAND`, and `ZOOM_SENSITIVITY` based on real testing.
+1. Test relaxed grip, victory gesture, and fallback touch mode on target mobile hardware.
+2. Tune grip curl thresholds, `CANDLE_HOLD_MIN_SCORE`, `ZOOM_DEADBAND`, and `ZOOM_SENSITIVITY` based on real testing.
 3. Consider adding an optional debug overlay for gesture name, score, zoom, and mode during calibration.
 4. Move remote mural dependencies to local optimized assets if reliability matters for exhibition use.
 5. Add a short browser test checklist to the repository once target devices are known.

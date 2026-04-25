@@ -4,6 +4,40 @@
 
 ### Summary
 
+Reworked candle activation from strict `Closed_Fist` classification to hybrid grip recognition. The app now accepts either a confident MediaPipe `Closed_Fist` result or a relaxed curled-finger landmark signal, with short confirmation/release hysteresis. Also lowered MediaPipe hand detection/presence/tracking thresholds to improve keypoint availability in difficult lighting.
+
+### Research Notes
+
+- MediaPipe Gesture Recognizer provides both canned gesture categories and 21 normalized hand landmarks.
+- Canned `Closed_Fist` alone is fragile for natural holding poses because camera angle, occlusion, and lighting can lower the classifier score.
+- A better candle interaction is a hybrid hold signal: landmark geometry for continuous holding, classifier labels for assist, and stable-frame hysteresis for visual calm.
+
+### Affected Areas / Files
+
+- `app.js`
+- `index.html`
+- `README.md`
+- `docs/design.md`
+- `docs/standards.md`
+- `docs/progress.md`
+- `docs/development/PROJECT_STATUS.md`
+- `docs/development/CODEX_PROGRESS_LOG.md`
+- `docs/development/TESTING.md`
+
+### Verification
+
+- `node --check app.js`: passing.
+- `git diff --check`: passing.
+- Real camera validation: still required.
+
+### Remaining Risk / Next Step
+
+Test the relaxed grip on target devices and tune `FINGER_CURL_MIN_SCORE`, `FIST_CURL_MIN_AVERAGE`, and `FIST_MODEL_ASSIST_MIN_SCORE` if needed.
+
+## 2026-04-26
+
+### Summary
+
 Darkened the unlit mural state and added a CSS-only floating dust layer for a stronger cave/history atmosphere.
 
 ### Affected Areas / Files

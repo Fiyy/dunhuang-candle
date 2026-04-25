@@ -20,6 +20,7 @@ This project is a static browser application with optional offline Python asset-
 - Continuous gestures may control continuous effects such as position, zoom, and pan.
 - Discrete gestures must use confidence thresholds and stable-frame confirmation.
 - Discrete gestures must have release logic to prevent repeated triggers while held.
+- Natural hold/grab gestures should prefer hybrid signals: model classification plus hand-landmark geometry, with short temporal hysteresis.
 - If a gesture can easily be misdetected, prefer manual UI control.
 - Gesture copy in the UI must match the implemented behavior.
 

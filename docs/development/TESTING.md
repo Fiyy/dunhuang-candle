@@ -33,11 +33,12 @@ Open `http://localhost:8000` and verify:
 
 Use this checklist for any gesture behavior change:
 
-- Closed fist lights the candle.
+- Relaxed curled-finger grip lights the candle.
+- Closed fist still lights the candle.
 - Open hand does not light the candle.
-- Releasing the fist turns the candle off.
-- Moving a closed fist moves the candle smoothly.
-- Moving a closed fist closer/farther changes zoom.
+- Releasing the grip turns the candle off.
+- Moving a held grip moves the candle smoothly.
+- Moving a held grip closer/farther changes zoom.
 - Holding victory switches to the next mural once, not repeatedly.
 - Moving to screen edges while zoomed pans the mural.
 - No hand present leaves the candle off.

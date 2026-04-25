@@ -19,9 +19,9 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 
 - User sees a start guide before camera access is requested.
 - User clicks `Start Exploring` to start camera/model initialization.
-- `Closed_Fist` lights and controls the candle.
-- Releasing the fist or using another hand pose turns the candle off.
-- Hand distance while holding fist controls zoom.
+- Relaxed curled-finger grip or `Closed_Fist` lights and controls the candle.
+- Releasing the grip or using another hand pose turns the candle off.
+- Hand distance while holding the grip controls zoom.
 - Edge position while zoomed auto-pans the mural.
 - Holding `Victory` switches to the next mural.
 - Global `Light On / Off` is controlled only by the button.
@@ -41,7 +41,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 
 ## Current Risks
 
-- `Closed_Fist` recognition may vary by device, light, skin tone, camera angle, and distance.
+- Grip recognition may vary by device, light, skin tone, camera angle, and distance.
 - Distance-based zoom is an approximation based on hand landmark scale, not true depth.
 - The app depends on external MediaPipe CDN/model hosting and remote Wikimedia mural images.
 - No automated browser test suite exists yet.
@@ -51,7 +51,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 ## Next Recommended Tasks
 
 1. Test gesture mode on the actual target phone/tablet/laptop cameras.
-2. Tune `CANDLE_HOLD_MIN_SCORE`, `ZOOM_DEADBAND`, and `ZOOM_SENSITIVITY`.
+2. Tune grip curl thresholds, `CANDLE_HOLD_MIN_SCORE`, `ZOOM_DEADBAND`, and `ZOOM_SENSITIVITY`.
 3. Add a temporary debug overlay for gesture name, score, mode, and zoom during calibration.
 4. Validate the GitHub Pages deployment after committing and pushing the current batch.
 5. Consider localizing all user-facing copy if the exhibition audience is Chinese.
