@@ -2,7 +2,7 @@
  * Dunhuang Cave Mural Candle Explorer
  * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
-const APP_VERSION = 'v0.8.4';
+const APP_VERSION = 'v0.8.5';
 const MEDIAPIPE_VERSION = '0.10.34';
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -11,7 +11,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Static app entry: `index.html`.
 - Styling and responsive UI: `style.css`.
 - Runtime interaction and rendering: `app.js`.
-- Atmosphere layer: CSS-only floating dust sits above the dark canvas and below controls.
+- Atmosphere layer: CSS-only background dust and drifting foreground motes sit above the dark canvas and below controls.
 - Offline media tooling: `gen_parallax.py`, `segment_mural.py`, `segment_mural_v2.py`, `segment_mural_v3.py`.
 - Deployment: GitHub Pages workflow uploads the repository root on pushes to `main`.
 
@@ -33,7 +33,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 
 - `node --check app.js`: passing as of 2026-04-26.
 - `git diff --check`: passing as of 2026-04-26.
-- Dark-state and dust implementation: code-level checks passing as of 2026-04-26.
+- Dark-state and enhanced dust implementation: code-level checks passing as of 2026-04-26.
 - Real camera gesture testing: still required on target devices.
 - Mobile touch fallback testing: still required on target devices.
 - Browser visual tuning on target display/projector: still required.

@@ -4,6 +4,36 @@
 
 ### Summary
 
+Researched heritage/immersive web atmosphere patterns and strengthened the dust implementation. The page now combines a subtle repeated dust texture with a small set of independently drifting foreground motes, making dust visible in the dark cave scene without adding per-frame JavaScript particle work.
+
+### Research Notes
+
+- Digital heritage examples emphasize immersive storytelling, guided exploration, and atmosphere instead of decorative effects detached from the site.
+- Built-heritage research specifically treats lighting, animation, and environmental simulation as ways to recreate place atmosphere.
+- Web animation guidance recommends restricting decorative motion to `transform` and `opacity`, testing performance on real devices, and respecting `prefers-reduced-motion`.
+
+### Affected Areas / Files
+
+- `app.js`
+- `index.html`
+- `style.css`
+- `docs/development/CODEX_PROGRESS_LOG.md`
+- `docs/development/PROJECT_STATUS.md`
+
+### Verification
+
+- `node --check app.js`: passing.
+- `git diff --check`: passing.
+- Browser visual validation: still required on target display/projector.
+
+### Remaining Risk / Next Step
+
+Dust visibility is display-dependent. Tune `#atmosphere-layer` opacity and `.dust-mote` alpha values after checking the deployed page on the exhibition display.
+
+## 2026-04-26
+
+### Summary
+
 Reworked candle activation from strict `Closed_Fist` classification to hybrid grip recognition. The app now accepts either a confident MediaPipe `Closed_Fist` result or a relaxed curled-finger landmark signal, with short confirmation/release hysteresis. Also lowered MediaPipe hand detection/presence/tracking thresholds to improve keypoint availability in difficult lighting.
 
 ### Research Notes

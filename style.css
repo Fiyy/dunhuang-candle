@@ -231,7 +231,7 @@ body.lights-on #mural-container {
   overflow: hidden;
   pointer-events: none;
   mix-blend-mode: screen;
-  opacity: 0.34;
+  opacity: 0.52;
 }
 
 #atmosphere-layer::before,
@@ -246,28 +246,62 @@ body.lights-on #mural-container {
 
 #atmosphere-layer::before {
   background-image:
-    radial-gradient(circle, rgba(232, 194, 114, 0.32) 0 1px, transparent 1.8px),
-    radial-gradient(circle, rgba(245, 219, 160, 0.22) 0 0.8px, transparent 1.6px),
-    radial-gradient(circle, rgba(177, 128, 62, 0.24) 0 1.2px, transparent 2px);
-  background-size: 180px 140px, 260px 220px, 340px 260px;
+    radial-gradient(circle, rgba(232, 194, 114, 0.5) 0 1.25px, transparent 2.4px),
+    radial-gradient(circle, rgba(245, 219, 160, 0.34) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(177, 128, 62, 0.36) 0 1.4px, transparent 2.4px);
+  background-size: 150px 130px, 230px 210px, 310px 250px;
   background-position: 18px 30px, 96px 120px, 170px 80px;
-  filter: blur(0.25px);
+  filter: blur(0.15px);
   animation: dust-drift-slow 38s linear infinite;
 }
 
 #atmosphere-layer::after {
   background-image:
-    radial-gradient(circle, rgba(255, 226, 168, 0.22) 0 0.7px, transparent 1.5px),
-    radial-gradient(circle, rgba(199, 151, 75, 0.18) 0 1px, transparent 1.8px);
-  background-size: 120px 180px, 300px 240px;
+    radial-gradient(circle, rgba(255, 226, 168, 0.38) 0 1px, transparent 2.2px),
+    radial-gradient(circle, rgba(199, 151, 75, 0.3) 0 1.3px, transparent 2.4px);
+  background-size: 110px 170px, 260px 220px;
   background-position: 44px 70px, 210px 40px;
-  filter: blur(0.55px);
-  opacity: 0.76;
+  filter: blur(0.35px);
+  opacity: 0.82;
   animation: dust-drift-fast 26s linear infinite;
 }
 
+.dust-mote {
+  --size: 4px;
+  --alpha: 0.7;
+  --drift-x: 34px;
+  --drift-y: -64px;
+  --duration: 18s;
+  --delay: 0s;
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 235, 178, 0.95) 0%, rgba(255, 235, 178, 0.95) 28%, rgba(224, 171, 88, 0.5) 46%, transparent 72%);
+  box-shadow: 0 0 10px rgba(238, 188, 96, 0.65);
+  opacity: 0;
+  transform: translate3d(0, 0, 0) scale(0.7);
+  will-change: transform, opacity;
+  animation: dust-mote-float var(--duration) ease-in-out var(--delay) infinite;
+}
+
+.dust-mote:nth-child(1)  { --x: 11%; --y: 72%; --size: 3px; --alpha: 0.58; --drift-x: 38px;  --drift-y: -92px; --duration: 19s; --delay: -3s; }
+.dust-mote:nth-child(2)  { --x: 18%; --y: 36%; --size: 5px; --alpha: 0.5;  --drift-x: -24px; --drift-y: -70px; --duration: 24s; --delay: -11s; }
+.dust-mote:nth-child(3)  { --x: 26%; --y: 63%; --size: 4px; --alpha: 0.72; --drift-x: 46px;  --drift-y: -88px; --duration: 21s; --delay: -8s; }
+.dust-mote:nth-child(4)  { --x: 35%; --y: 24%; --size: 3px; --alpha: 0.54; --drift-x: 28px;  --drift-y: -58px; --duration: 17s; --delay: -1s; }
+.dust-mote:nth-child(5)  { --x: 43%; --y: 78%; --size: 6px; --alpha: 0.46; --drift-x: -34px; --drift-y: -106px; --duration: 27s; --delay: -14s; }
+.dust-mote:nth-child(6)  { --x: 52%; --y: 42%; --size: 3px; --alpha: 0.64; --drift-x: 42px;  --drift-y: -76px; --duration: 20s; --delay: -6s; }
+.dust-mote:nth-child(7)  { --x: 59%; --y: 18%; --size: 4px; --alpha: 0.46; --drift-x: -22px; --drift-y: -44px; --duration: 22s; --delay: -15s; }
+.dust-mote:nth-child(8)  { --x: 66%; --y: 68%; --size: 5px; --alpha: 0.68; --drift-x: 32px;  --drift-y: -96px; --duration: 23s; --delay: -9s; }
+.dust-mote:nth-child(9)  { --x: 73%; --y: 33%; --size: 3px; --alpha: 0.62; --drift-x: -38px; --drift-y: -62px; --duration: 18s; --delay: -4s; }
+.dust-mote:nth-child(10) { --x: 80%; --y: 82%; --size: 6px; --alpha: 0.42; --drift-x: -46px; --drift-y: -118px; --duration: 29s; --delay: -17s; }
+.dust-mote:nth-child(11) { --x: 88%; --y: 51%; --size: 4px; --alpha: 0.6;  --drift-x: 20px;  --drift-y: -86px; --duration: 21s; --delay: -12s; }
+.dust-mote:nth-child(12) { --x: 94%; --y: 27%; --size: 3px; --alpha: 0.5;  --drift-x: -28px; --drift-y: -56px; --duration: 16s; --delay: -5s; }
+
 body.lights-on #atmosphere-layer {
-  opacity: 0.18;
+  opacity: 0.26;
 }
 
 @keyframes dust-drift-slow {
@@ -280,10 +314,32 @@ body.lights-on #atmosphere-layer {
   to   { transform: translate3d(-5%, -6%, 0); }
 }
 
+@keyframes dust-mote-float {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.65);
+  }
+  16% {
+    opacity: var(--alpha);
+  }
+  58% {
+    opacity: var(--alpha);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--drift-x), var(--drift-y), 0) scale(1.12);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #atmosphere-layer::before,
-  #atmosphere-layer::after {
+  #atmosphere-layer::after,
+  .dust-mote {
     animation: none;
+  }
+
+  .dust-mote {
+    opacity: 0.28;
   }
 }
 
