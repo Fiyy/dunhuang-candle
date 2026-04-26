@@ -39,7 +39,8 @@ Use this checklist for any gesture behavior change:
 - Releasing the grip turns the candle off.
 - Moving a held grip moves the candle smoothly.
 - Moving a held grip closer/farther changes zoom.
-- Holding victory switches to the next mural once, not repeatedly.
+- Victory gesture does not switch backgrounds.
+- Bottom dot buttons switch backgrounds.
 - Moving to screen edges while zoomed pans the mural.
 - No hand present leaves the candle off.
 

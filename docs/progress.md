@@ -18,7 +18,7 @@ Canonical status and work logs now live in:
 - Added candle-light reveal rendering with warm glow and animated flame.
 - Added MediaPipe Gesture Recognizer integration.
 - Added touch and mouse fallback when camera/model initialization fails.
-- Added mural switching through bottom dots and victory gesture.
+- Added background switching through bottom dots.
 - Added distance-based zoom and edge auto-pan.
 - Pinned MediaPipe runtime version to reduce CDN drift.
 - Added GPU-to-CPU fallback for gesture recognizer initialization.
@@ -26,6 +26,7 @@ Canonical status and work logs now live in:
 - Added inference throttling for better mobile performance.
 - Added gesture stability logic for discrete gestures.
 - Removed gesture control for global light mode.
+- Removed gesture control for background switching.
 - Added start guide before camera permission is requested.
 - Changed candle activation so a relaxed curled-finger grip or `Closed_Fist` lights and controls the candle.
 - Added project documentation set: design, standards, and progress.
@@ -49,7 +50,7 @@ Canonical status and work logs now live in:
 
 ## Recommended Next Steps
 
-1. Test relaxed grip, victory gesture, and fallback touch mode on target mobile hardware.
+1. Test relaxed grip, bottom-dot background switching, and fallback touch mode on target mobile hardware.
 2. Tune grip curl thresholds, `CANDLE_HOLD_MIN_SCORE`, `ZOOM_DEADBAND`, and `ZOOM_SENSITIVITY` based on real testing.
 3. Consider adding an optional debug overlay for gesture name, score, zoom, and mode during calibration.
 4. Optimize local `image/` PNG assets for web delivery if load time becomes an issue.

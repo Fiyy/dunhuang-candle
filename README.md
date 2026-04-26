@@ -8,7 +8,7 @@ An interactive Dunhuang mural explorer. The page uses local image backgrounds, a
 - Relaxed finger curl / closed fist holds and lights the candle.
 - Moving the held grip moves the candle.
 - Moving the held grip closer or farther controls mural zoom.
-- Holding a victory gesture switches to the next mural.
+- Bottom dots switch the background image.
 - Light On / Off is controlled only by the on-screen button.
 - If camera or model loading fails, the app falls back to touch mode.
 

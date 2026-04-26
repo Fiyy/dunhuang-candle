@@ -4,6 +4,34 @@
 
 ### Summary
 
+Removed gesture-based background switching. Background selection is now controlled only by the bottom dot buttons; `Victory` no longer triggers mural/background changes or suppresses candle movement.
+
+### Affected Areas / Files
+
+- `app.js`
+- `index.html`
+- `README.md`
+- `docs/design.md`
+- `docs/standards.md`
+- `docs/progress.md`
+- `docs/development/PROJECT_STATUS.md`
+- `docs/development/CODEX_PROGRESS_LOG.md`
+- `docs/development/TESTING.md`
+
+### Verification
+
+- `node --check app.js`: passing.
+- `git diff --check`: passing.
+- Browser/manual validation: still required for dot switching and camera mode.
+
+### Remaining Risk / Next Step
+
+Verify on a touch device that bottom dots are easy to tap while the camera experience is active.
+
+## 2026-04-26
+
+### Summary
+
 Improved candle-lit readability without brightening the fully unlit state. When the candle is actively held, the mural layer now enters a brighter `candle-active` visual state behind the dark overlay, and the candle cutout radius/core are stronger so details inside the flame area are clearer.
 
 ### Affected Areas / Files

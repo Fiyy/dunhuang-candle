@@ -14,6 +14,7 @@ This project is a static browser application with optional offline Python asset-
 - Keep external CDN dependencies pinned to explicit versions.
 - Treat camera access as optional and always preserve fallback behavior.
 - Do not map destructive or global actions to ambiguous gestures.
+- Do not map background switching to hand gestures; keep it on explicit UI controls.
 
 ## Gesture Standards
 

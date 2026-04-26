@@ -2,7 +2,7 @@
  * Dunhuang Cave Mural Candle Explorer
  * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
-const APP_VERSION = 'v0.8.7';
+const APP_VERSION = 'v0.8.8';
 const MEDIAPIPE_VERSION = '0.10.34';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,10 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const ZOOM_DEADBAND = 0.08;
   const ZOOM_SENSITIVITY = 1.25;
   const ZOOM_CHANGE_EPSILON = 0.012;
-  const DISCRETE_GESTURE_MIN_SCORE = 0.65;
-  const DISCRETE_GESTURE_STABLE_FRAMES = 4;
-  const DISCRETE_GESTURE_RELEASE_MS = 450;
-  const DISCRETE_GESTURES = new Set(['Victory']);
   const CANDLE_HOLD_GESTURE = 'Closed_Fist';
   const CANDLE_HOLD_MIN_SCORE = 0.55;
   const FIST_MODEL_ASSIST_MIN_SCORE = 0.42;
@@ -93,10 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeCameraStream = null;
   let lastHandSeenAt = 0;
 
-  let pendingDiscreteGesture = null;
-  let pendingDiscreteFrames = 0;
-  let heldDiscreteGesture = null;
-  let lastDiscreteGestureSeenAt = 0;
   let fistHoldFrames = 0;
   let fistReleaseFrames = 0;
 
@@ -257,14 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
     smoothedHandSize = null;
     smoothedCandleX = null;
     smoothedCandleY = null;
-    pendingDiscreteGesture = null;
-    pendingDiscreteFrames = 0;
     fistReleaseFrames = 0;
     fistHoldFrames = 0;
-    if (clearHeldGesture) {
-      heldDiscreteGesture = null;
-      lastDiscreteGestureSeenAt = 0;
-    }
   }
 
   function setLightsOn(nextLightsOn) {
@@ -288,38 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     candleX = smoothedCandleX;
     candleY = smoothedCandleY;
-  }
-
-  function getDiscreteGestureTrigger(gesture) {
-    const now = Date.now();
-    const gestureName = gesture?.categoryName;
-    const score = gesture?.score ?? 0;
-    const isValidDiscreteGesture = DISCRETE_GESTURES.has(gestureName) && score >= DISCRETE_GESTURE_MIN_SCORE;
-
-    if (!isValidDiscreteGesture) {
-      pendingDiscreteGesture = null;
-      pendingDiscreteFrames = 0;
-      if (heldDiscreteGesture && now - lastDiscreteGestureSeenAt > DISCRETE_GESTURE_RELEASE_MS) {
-        heldDiscreteGesture = null;
-      }
-      return null;
-    }
-
-    lastDiscreteGestureSeenAt = now;
-
-    if (pendingDiscreteGesture === gestureName) {
-      pendingDiscreteFrames += 1;
-    } else {
-      pendingDiscreteGesture = gestureName;
-      pendingDiscreteFrames = 1;
-    }
-
-    if (pendingDiscreteFrames < DISCRETE_GESTURE_STABLE_FRAMES || heldDiscreteGesture === gestureName) {
-      return null;
-    }
-
-    heldDiscreteGesture = gestureName;
-    return gestureName;
   }
 
   // ---------------------------------------------------------------------------
@@ -366,22 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     lastHandSeenAt = Date.now();
-    const triggeredGesture = getDiscreteGestureTrigger(gesture);
-
-    // Victory = Switch mural after multiple stable frames.
-    if (triggeredGesture === "Victory") {
-      switchMural((currentMural + 1) % MURALS.length);
-      resetHandTrackingState();
-      return;
-    }
-
-    // While a discrete gesture is being confirmed, suppress candle movement to avoid visual flicker.
-    if (DISCRETE_GESTURES.has(gesture?.categoryName) && (gesture?.score ?? 0) >= DISCRETE_GESTURE_MIN_SCORE) {
-      candleActive = false;
-      zoomBaseline = null;
-      smoothedHandSize = null;
-      return;
-    }
 
     const holdSignal = getCandleHoldSignal(gesture, landmarks);
     const isHoldingCandle = holdSignal.isHolding;

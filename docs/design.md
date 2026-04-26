@@ -29,12 +29,12 @@ Create an atmospheric browser-based Dunhuang mural experience where users explor
 - Hand position while holding the grip: move the candle.
 - Hand distance while holding the grip: zoom in and out.
 - Edge position while zoomed: auto-pan the mural.
-- `Victory`: switch to the next mural.
+- Background switching is not gesture-controlled.
 
 ## Manual Controls
 
 - `Light On / Off`: only the button controls global brightness.
-- Mural dots: direct mural selection.
+- Mural dots: the only background selection control.
 - Touch fallback: one finger moves the candle, two fingers zoom.
 - Desktop fallback: mouse drag moves the candle, mouse wheel zooms.
 
@@ -58,5 +58,5 @@ Create an atmospheric browser-based Dunhuang mural experience where users explor
 
 - Grip recognition may vary by camera angle, hand size, lighting, and device, but it no longer depends only on the pre-trained `Closed_Fist` label.
 - Distance-based zoom is an approximation based on visible palm geometry, not real depth.
-- Victory gesture may be confused with similar hand poses on low-quality cameras.
+- Background switching stays manual because discrete hand gestures were too unreliable for this interaction.
 - Users may need a short calibration period to understand grip distance zoom.

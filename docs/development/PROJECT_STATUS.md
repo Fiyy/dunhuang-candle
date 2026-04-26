@@ -24,7 +24,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Releasing the grip or using another hand pose turns the candle off.
 - Hand distance while holding the grip controls zoom.
 - Edge position while zoomed auto-pans the mural.
-- Holding `Victory` switches to the next mural.
+- Background switching is controlled only by the bottom dot buttons.
 - Global `Light On / Off` is controlled only by the button.
 - Touch fallback supports one-finger candle movement and two-finger zoom.
 - Desktop fallback supports mouse drag and mouse wheel zoom.
