@@ -32,7 +32,7 @@ Canonical status and work logs now live in:
 - Added project documentation set: design, standards, and progress.
 - Added repository agent instructions and development status/log/testing documents.
 - Sanitized the local `origin` remote URL so it no longer contains an embedded token.
-- Switched the three background slots to local PNG files from `image/`.
+- Switched the three background slots to `cave17`, `cave112`, and `cave3` local PNG files.
 
 ## In Progress
 

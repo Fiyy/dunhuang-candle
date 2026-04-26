@@ -11,7 +11,7 @@ Dunhuang Candle is a static browser experience for exploring Dunhuang mural imag
 - Static app entry: `index.html`.
 - Styling and responsive UI: `style.css`.
 - Runtime interaction and rendering: `app.js`.
-- Background images: local PNG files from `image/` are used for all three mural/background slots.
+- Background images: `image/cave17.png`, `image/cave112.png`, and `image/cave3.png` are used in that order.
 - Atmosphere layer: CSS-only background dust and drifting foreground motes sit above the dark canvas and below controls.
 - Offline media tooling: `gen_parallax.py`, `segment_mural.py`, `segment_mural_v2.py`, `segment_mural_v3.py`.
 - Deployment: GitHub Pages workflow uploads the repository root on pushes to `main`.

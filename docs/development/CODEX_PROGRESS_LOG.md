@@ -4,6 +4,33 @@
 
 ### Summary
 
+Updated the local background sequence and visible background names to match the new image asset names: `cave17`, `cave112`, then `cave3`.
+
+### Affected Areas / Files
+
+- `app.js`
+- `index.html`
+- `docs/progress.md`
+- `docs/development/PROJECT_STATUS.md`
+- `docs/development/CODEX_PROGRESS_LOG.md`
+- `image/cave17.png`
+- `image/cave112.png`
+- `image/cave3.png`
+
+### Verification
+
+- `node --check app.js`: passing.
+- `git diff --check`: passing.
+- Local image existence check: passing.
+
+### Remaining Risk / Next Step
+
+The new PNG files are local and committed, but may still need web-size optimization if deployment load time is too slow.
+
+## 2026-04-26
+
+### Summary
+
 Removed gesture-based background switching. Background selection is now controlled only by the bottom dot buttons; `Victory` no longer triggers mural/background changes or suppresses candle movement.
 
 ### Affected Areas / Files

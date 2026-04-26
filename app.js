@@ -2,7 +2,7 @@
  * Dunhuang Cave Mural Candle Explorer
  * Uses MediaPipe Gesture Recognizer or touch to reveal murals with a candle-light effect.
  */
-const APP_VERSION = 'v0.8.8';
+const APP_VERSION = 'v0.8.9';
 const MEDIAPIPE_VERSION = '0.10.34';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mural data
   // ---------------------------------------------------------------------------
   const MURALS = [
-    { src: 'image/ChatGPT%20Image%20Apr%2022,%202026,%2010_29_11%20PM.png', title: 'Dunhuang Candle I', type: 'image' },
-    { src: 'image/ChatGPT%20Image%20Apr%2022,%202026,%2010_48_57%20PM.png', title: 'Dunhuang Candle II', type: 'image' },
-    { src: 'image/ChatGPT%20Image%20Apr%2022,%202026,%2011_03_19%20PM.png', title: 'Dunhuang Candle III', type: 'image' },
+    { src: 'image/cave17.png', title: 'cave17', type: 'image' },
+    { src: 'image/cave112.png', title: 'cave112', type: 'image' },
+    { src: 'image/cave3.png', title: 'cave3', type: 'image' },
   ];
 
   // ---------------------------------------------------------------------------
